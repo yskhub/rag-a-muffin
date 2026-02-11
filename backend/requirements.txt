@@ -1,26 +1,31 @@
 # Core Framework
-fastapi==0.109.0
-uvicorn==0.27.0
-python-multipart==0.0.6
+fastapi==0.115.6
+uvicorn==0.32.1
+python-multipart==0.0.19
 
 # FREE AI Services
-google-generativeai==0.3.2
-langchain==0.1.6
-langchain-google-genai==0.0.6
+google-generativeai==0.8.3
+langchain==0.3.7
+langchain-community==0.3.7
+langchain-google-genai==2.0.4
 
 # FREE Vector Database
-chromadb==0.4.22
+chromadb==0.5.21
 
-# Embeddings (Runs locally - FREE)
-sentence-transformers==2.3.1
+# Embeddings & Helper Libs (Pinned to avoid backtracking)
+sentence-transformers==3.3.1
+huggingface_hub==0.27.0
+httpx==0.27.2
+httpcore==1.0.7
+h11==0.14.0
 
 # Database (FREE 500MB)
-supabase==2.3.4
+supabase==2.10.0
 
 # Environment & Config
-python-dotenv==1.0.0
-pydantic==2.5.3
-pydantic-settings==2.1.0
+python-dotenv==1.0.1
+pydantic==2.10.3
+pydantic-settings==2.6.1
 
 # Document Processing
 PyPDF2==3.0.1
