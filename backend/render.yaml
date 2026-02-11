@@ -2,9 +2,13 @@ services:
   - type: web
     name: ecommerce-chatbot-api
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && export HF_HOME=./hf_cache && python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: HF_HOME
+        value: /opt/render/project/src/hf_cache
+      - key: ANONYMIZED_TELEMETRY
+        value: 'False'
       - key: GOOGLE_API_KEY
         sync: false
       - key: SUPABASE_URL

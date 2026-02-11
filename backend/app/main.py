@@ -16,10 +16,8 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting FREE RAG API...")
-    # Trigger lazy loading of services
-    from app.services.rag_pipeline import get_rag_pipeline
-    get_rag_pipeline()
+    logger.info("Starting FREE RAG API (Rapid Boot)...")
+    # Lazy loading will happen on the first request to avoid blocking startup
     yield
 
 app = FastAPI(title="FREE RAG API", lifespan=lifespan)
@@ -38,6 +36,6 @@ app.include_router(chat.router, prefix="/api", tags=["chat"])
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"message": "FREE RAG API Ready", "cost": "$0.00"}

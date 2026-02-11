@@ -4,12 +4,14 @@ Admin API Endpoints
 
 from fastapi import APIRouter, HTTPException
 from app.services.rag_pipeline import get_rag_pipeline
-from app.services.chroma_service import ChromaDBService
+from app.services.chroma_service import get_chroma_service
 from typing import List
 import uuid
 
 router = APIRouter()
-chroma = ChromaDBService()
+
+def get_chroma():
+    return get_chroma_service()
 
 @router.get("/dashboard")
 async def admin_dashboard():
@@ -34,7 +36,7 @@ async def add_faqs(faqs: List[dict]):
         texts = [f"Q: {f['question']}\nA: {f['answer']}" for f in faqs]
         metadatas = [{"source": "FAQ", "type": "faq"} for _ in faqs]
         ids = [f"faq_{uuid.uuid4().hex[:8]}" for _ in faqs]
-        chroma.add_documents(texts, metadatas, ids)
+        get_chroma().add_documents(texts, metadatas, ids)
         return {"count": len(faqs)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -51,7 +53,7 @@ async def seed_data():
         texts = [i["text"] for i in sample]
         metadatas = [{"source": i["source"], "category": i["category"]} for i in sample]
         ids = [f"sample_{i}_{uuid.uuid4().hex[:4]}" for i in range(len(sample))]
-        chroma.add_documents(texts, metadatas, ids)
+        get_chroma().add_documents(texts, metadatas, ids)
         return {"items_added": len(sample)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

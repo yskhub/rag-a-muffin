@@ -138,3 +138,12 @@ class ChromaDBService:
             if metadata and "source" in metadata:
                 sources.add(metadata["source"])
         return list(sources)
+
+_chroma_service: Optional[ChromaDBService] = None
+
+def get_chroma_service() -> ChromaDBService:
+    """Get or create ChromaDB service singleton"""
+    global _chroma_service
+    if _chroma_service is None:
+        _chroma_service = ChromaDBService()
+    return _chroma_service
