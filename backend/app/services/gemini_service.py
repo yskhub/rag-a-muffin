@@ -40,7 +40,7 @@ class GeminiService:
         
         print("✅ Google Gemini initialized (100% FREE - 15 RPM)")
     
-    def _check_rate_limit(self):
+    async def _check_rate_limit(self):
         """
         Ensure we don't exceed 15 requests per minute
         Waits if necessary to avoid rate limit errors
@@ -54,13 +54,14 @@ class GeminiService:
         # If at limit, wait
         if len(self.request_times) >= 15:
             oldest_request = self.request_times[0]
-            sleep_time = 60 - (now - oldest_request).total_seconds()
-            if sleep_time > 0:
-                print(f"⏳ Rate limit reached. Waiting {sleep_time:.1f}s...")
-                time.sleep(sleep_time)
+            wait_seconds = 60 - (now - oldest_request).total_seconds()
+            if wait_seconds > 0:
+                print(f"⏳ Local rate limit reached. Awaiting {wait_seconds:.1f}s...")
+                import asyncio
+                await asyncio.sleep(wait_seconds)
         
         # Record this request
-        self.request_times.append(now)
+        self.request_times.append(datetime.now())
     
     async def generate_response(self, prompt: str) -> str:
         """
@@ -72,7 +73,7 @@ class GeminiService:
         
         for attempt in range(max_retries):
             # Check rate limit before making request
-            self._check_rate_limit()
+            await self._check_rate_limit()
             
             try:
                 # generate_content is synchronous in the SDK normally, but we wrap it
@@ -89,11 +90,11 @@ class GeminiService:
                 if "rate" in error_msg.lower() or "429" in error_msg:
                     if attempt < max_retries - 1:
                         wait_time = retry_delay * (attempt + 1)
-                        print(f"⏳ Rate limited. Retrying in {wait_time}s...")
+                        print(f"⏳ External Rate Limit (Google). Retrying in {wait_time}s...")
                         import asyncio
                         await asyncio.sleep(wait_time)
                         continue
-                    return "Too many requests. Please wait a moment and try again."
+                    return f"Google Gemini is currently rate-limited (Attempt {attempt+1}). Please wait a minute."
                 
                 # If it's a quota error, return immediately
                 if "quota" in error_msg.lower():
