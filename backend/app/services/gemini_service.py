@@ -108,7 +108,7 @@ class GeminiService:
         
         return "System timeout. Please try again."
     
-    def generate_with_context(
+    async def generate_with_context(
         self, 
         query: str, 
         context: str, 
