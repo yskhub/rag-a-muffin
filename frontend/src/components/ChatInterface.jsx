@@ -45,8 +45,14 @@ const ChatInterface = () => {
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <button 
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={clearMessages}
+                        className="hidden md:flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-widest text-indigo-400 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl transition-all"
+                    >
+                        <span>+</span> New Chat
+                    </button>
+                    <button
                         onClick={clearMessages}
                         className="p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group"
                         title="Clear History"
@@ -72,7 +78,7 @@ const ChatInterface = () => {
                         </p>
                         <div className="grid grid-cols-2 gap-3 mt-10 max-w-lg w-full">
                             {['Check return policy', 'Compare headphones', 'Shipping rates', 'New arrivals'].map(tag => (
-                                <button 
+                                <button
                                     key={tag}
                                     onClick={() => setInput(tag)}
                                     className="p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 text-gray-300 text-sm font-medium transition-all text-left"
@@ -101,7 +107,7 @@ const ChatInterface = () => {
                         </div>
                     </div>
                 )}
-                
+
                 {error && (
                     <div className="mx-auto max-w-max bg-red-500/10 border border-red-500/20 text-red-400 px-6 py-3 rounded-2xl text-sm flex items-center gap-3 animate-slide-up">
                         <span className="text-lg">⚠️</span> {error}
@@ -116,22 +122,21 @@ const ChatInterface = () => {
                     <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[28px] blur opacity-10 group-focus-within:opacity-25 transition-opacity duration-300" />
                     <div className="relative glass-dark rounded-[24px] border border-white/10 p-2 flex gap-2">
                         <input
-                            type="text" 
-                            value={input} 
+                            type="text"
+                            value={input}
                             onChange={e => setInput(e.target.value)}
                             onKeyPress={e => e.key === 'Enter' && handleSend()}
-                            placeholder="Type your message here..." 
+                            placeholder="Type your message here..."
                             disabled={isLoading}
                             className="flex-1 bg-transparent px-6 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-0"
                         />
-                        <button 
-                            onClick={handleSend} 
+                        <button
+                            onClick={handleSend}
                             disabled={!input.trim() || isLoading}
-                            className={`px-8 py-3 rounded-2xl font-bold tracking-wide transition-all duration-300 ${
-                                !input.trim() || isLoading 
-                                ? 'bg-white/5 text-gray-600' 
-                                : 'bg-white text-black hover:scale-[1.02] active:scale-95 glow-pulse'
-                            }`}
+                            className={`px-8 py-3 rounded-2xl font-bold tracking-wide transition-all duration-300 ${!input.trim() || isLoading
+                                    ? 'bg-white/5 text-gray-600'
+                                    : 'bg-white text-black hover:scale-[1.02] active:scale-95 glow-pulse'
+                                }`}
                         >
                             {isLoading ? '...' : 'Send'}
                         </button>
