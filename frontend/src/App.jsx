@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import ChatInterface from './components/ChatInterface';
 import AdminDashboard from './components/AdminDashboard';
-import './styles/globals.css';
+
 
 function App() {
   return (

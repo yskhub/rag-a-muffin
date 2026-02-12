@@ -71,7 +71,7 @@ class FreeRAGPipeline:
             history_text = self._format_history(history)
             
             # Step 4: Generate response with Gemini (FREE - 15 RPM)
-            answer = self.gemini.generate_with_context(
+            answer = await self.gemini.generate_with_context(
                 query=query,
                 context=context if context else "No relevant context found.",
                 conversation_history=history

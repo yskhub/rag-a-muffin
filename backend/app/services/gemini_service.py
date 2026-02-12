@@ -62,29 +62,51 @@ class GeminiService:
         # Record this request
         self.request_times.append(now)
     
-    def generate_response(self, prompt: str) -> str:
+    async def generate_response(self, prompt: str) -> str:
         """
         Generate response using Gemini
-        Includes automatic rate limiting for free tier
+        Includes automatic rate limiting and retries for free tier
         """
-        # Check rate limit before making request
-        self._check_rate_limit()
+        max_retries = 3
+        retry_delay = 2 # Seconds
         
-        try:
-            response = self.model.generate_content(prompt)
-            return response.text
-        
-        except Exception as e:
-            error_msg = str(e)
-            print(f"❌ Gemini API Error: {error_msg}")
+        for attempt in range(max_retries):
+            # Check rate limit before making request
+            self._check_rate_limit()
             
-            # Handle specific errors
-            if "quota" in error_msg.lower():
-                return "I've reached my daily limit. Please try again tomorrow!"
-            elif "rate" in error_msg.lower():
-                return "Too many requests. Please wait a moment and try again."
-            else:
+            try:
+                # generate_content is synchronous in the SDK normally, but we wrap it
+                import asyncio
+                loop = asyncio.get_event_loop()
+                response = await loop.run_in_executor(None, lambda: self.model.generate_content(prompt))
+                return response.text
+            
+            except Exception as e:
+                error_msg = str(e)
+                print(f"❌ Gemini API Error (Attempt {attempt+1}/{max_retries}): {error_msg}")
+                
+                # If it's a rate limit error, wait and retry
+                if "rate" in error_msg.lower() or "429" in error_msg:
+                    if attempt < max_retries - 1:
+                        wait_time = retry_delay * (attempt + 1)
+                        print(f"⏳ Rate limited. Retrying in {wait_time}s...")
+                        import asyncio
+                        await asyncio.sleep(wait_time)
+                        continue
+                    return "Too many requests. Please wait a moment and try again."
+                
+                # If it's a quota error, return immediately
+                if "quota" in error_msg.lower():
+                    return "I've reached my daily limit. Please try again tomorrow!"
+                
+                # Other errors
+                if attempt < max_retries - 1:
+                    import asyncio
+                    await asyncio.sleep(retry_delay)
+                    continue
                 return "I'm having trouble responding right now. Please try again."
+        
+        return "System timeout. Please try again."
     
     def generate_with_context(
         self, 
@@ -125,7 +147,7 @@ INSTRUCTIONS:
 
 ANSWER:"""
 
-        return self.generate_response(prompt)
+        return await self.generate_response(prompt)
     
     def get_stats(self) -> Dict:
         """Get service statistics"""
