@@ -1,33 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useChatStore from '../store/chatStore';
-import MessageBubble from './MessageBubble';
 import GlassCard from './ui/GlassCard';
-import TerminalInput from './ui/TerminalInput';
-import CommandButton from './ui/CommandButton';
+
+const LOADING_STEPS = [
+    'Retrieving context fragments...',
+    'Injecting neural memory...',
+    'Synthesizing response...',
+    'Finalizing output stream...'
+];
 
 const ChatInterface = () => {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef(null);
-    const { messages, isLoading, error, sendMessage } = useChatStore();
-    const [loadingStep, setLoadingStep] = useState('');
+    const { messages, isLoading, error, sendMessage, clearError } = useChatStore();
+    const [loadingStep, setLoadingStep] = useState(0);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [messages, isLoading]);
 
     useEffect(() => {
         if (isLoading) {
-            const steps = [
-                'RETRIEVING_CONTEXT_FRAGMENTS...',
-                'INJECTING_NEURAL_MEMORY...',
-                'SYNTHESIZING_RESPONSE...',
-                'FINALIZING_DATA_STREAM...'
-            ];
-            let i = 0;
+            setLoadingStep(0);
             const interval = setInterval(() => {
-                setLoadingStep(steps[i]);
-                i = (i + 1) % steps.length;
-            }, 1000);
+                setLoadingStep(prev => (prev + 1) % LOADING_STEPS.length);
+            }, 1200);
             return () => clearInterval(interval);
         }
     }, [isLoading]);
@@ -36,58 +33,109 @@ const ChatInterface = () => {
         if (!input.trim() || isLoading) return;
         const msg = input.trim();
         setInput('');
+        clearError?.();
         await sendMessage(msg);
     };
 
-    // Get the latest assistant message to show retrieval sources at the bottom
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
+    // Get the latest assistant message for retrieval sources
     const lastAssistantMsg = [...(messages || [])].reverse().find(m => m.role === 'assistant');
 
     return (
-        <div className="flex flex-col h-full gap-6 overflow-hidden">
+        <div className="flex flex-col h-full gap-4 overflow-hidden">
 
-            {/* Main Chat Area */}
-            <GlassCard noPadding className="flex-1 flex flex-col overflow-hidden bg-slate-900/10 border-white/5">
-                <div className="flex-1 overflow-y-auto px-10 py-10 space-y-10 custom-scrollbar">
-                    {messages.length === 0 && (
-                        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center animate-pulse">
-                            <div className="text-6xl mb-8 opacity-20">📡</div>
-                            <h2 className="text-2xl font-bold text-white uppercase tracking-tighter italic mb-4">Awaiting_Sync_Request</h2>
-                            <p className="text-[10px] font-bold text-primary/30 uppercase tracking-[0.4em] max-w-xs mx-auto leading-relaxed">
-                                System ready for knowledge retrieval. <br /> Initialize command packet to begin.
+            {/* Chat Area */}
+            <GlassCard noPadding className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5 custom-scrollbar">
+
+                    {/* Empty State */}
+                    {messages.length === 0 && !isLoading && (
+                        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center mb-6 animate-float">
+                                <span className="text-2xl">◆</span>
+                            </div>
+                            <h2 className="font-heading text-lg font-semibold text-white mb-2">Ready for input</h2>
+                            <p className="text-sm text-slate-500 max-w-sm leading-relaxed">
+                                Ask a question to start the knowledge retrieval pipeline.
+                                Upload documents via the admin panel to build the context index.
                             </p>
                         </div>
                     )}
 
+                    {/* Messages */}
                     {messages.map((msg, i) => (
-                        <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-slide-up`}>
-                            {/* Role Label */}
-                            <span className={`text-[9px] font-black uppercase tracking-[0.3em] mb-3 px-2 ${msg.role === 'user' ? 'text-primary' : 'text-slate-500'}`}>
-                                {msg.role === 'user' ? 'OPERATOR_PROMPT' : 'SYSTEM_RESPONSE'}
-                            </span>
+                        <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}>
+                            <div className={`max-w-[80%] ${msg.role === 'user' ? 'order-1' : ''}`}>
+                                {/* Role Tag */}
+                                <div className={`flex items-center gap-2 mb-1.5 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full ${msg.role === 'user' ? 'bg-primary' : 'bg-emerald-400'}`} />
+                                    <span className="text-[10px] font-medium text-slate-500">
+                                        {msg.role === 'user' ? 'You' : 'AI Engine'}
+                                    </span>
+                                    {msg.timestamp && (
+                                        <span className="text-[9px] font-mono text-slate-700">
+                                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                        </span>
+                                    )}
+                                </div>
 
-                            {/* Message Bubble */}
-                            <div className={`
-                                max-w-[85%] px-6 py-4 rounded-2xl text-[14px] leading-relaxed tracking-wide
-                                ${msg.role === 'user'
-                                    ? 'bg-primary/10 border border-primary/30 text-white rounded-tr-none'
-                                    : 'bg-slate-800/70 border border-white/5 text-slate-200 rounded-tl-none'
-                                }
-                            `}>
-                                {msg.content}
+                                {/* Bubble */}
+                                <div className={`
+                                    px-5 py-3.5 text-[13.5px] leading-relaxed
+                                    ${msg.role === 'user'
+                                        ? 'bg-primary/8 border border-primary/20 text-white rounded-2xl rounded-tr-sm'
+                                        : 'bg-slate-800/50 border border-white/[0.06] text-slate-200 rounded-2xl rounded-tl-sm'
+                                    }
+                                `}>
+                                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                                </div>
+
+                                {/* Sources inline for assistant */}
+                                {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-1.5">
+                                        {msg.sources.map((s, j) => (
+                                            <span key={j} className="inline-flex items-center gap-1.5 px-2 py-1 bg-primary/5 border border-primary/10 rounded-md text-[9px] font-mono text-primary/60">
+                                                <span className="w-1 h-1 rounded-full bg-primary/40" />
+                                                {s.source || `source_${j}`}
+                                                <span className="text-slate-600">·</span>
+                                                <span className="text-slate-500">{s.relevance || 0}%</span>
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
 
+                    {/* Loading Indicator */}
                     {isLoading && (
-                        <div className="flex flex-col items-start animate-slide-up">
-                            <span className="text-[9px] font-black uppercase tracking-[0.3em] mb-3 px-2 text-slate-500">SYSTEM_PROCESSING</span>
-                            <div className="flex flex-col gap-2 px-6 py-4 bg-slate-800/20 border border-white/5 rounded-2xl rounded-tl-none">
-                                <div className="flex gap-1.5 mb-1">
-                                    <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                                    <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                                    <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                        <div className="flex justify-start animate-slide-up">
+                            <div className="max-w-[70%]">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    <span className="text-[10px] font-medium text-slate-500">AI Engine</span>
                                 </div>
-                                <span className="text-[10px] font-mono text-primary/40 uppercase tracking-widest">{loadingStep}</span>
+                                <div className="px-5 py-4 bg-slate-800/30 border border-white/[0.04] rounded-2xl rounded-tl-sm">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                                        <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                                        <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        {LOADING_STEPS.map((step, i) => (
+                                            <p key={i} className={`text-[10px] font-mono transition-all duration-300 ${i <= loadingStep ? 'text-primary/50' : 'text-slate-700'
+                                                } ${i === loadingStep ? 'loading-step' : ''}`}>
+                                                {i < loadingStep ? '✓' : i === loadingStep ? '►' : '○'} {step}
+                                            </p>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -95,55 +143,59 @@ const ChatInterface = () => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Area */}
-                <div className="p-8 border-t border-white/5 bg-slate-950/40">
-                    <div className="flex gap-4 max-w-4xl mx-auto w-full">
-                        <TerminalInput
-                            value={input}
-                            onChange={e => setInput(e.target.value)}
-                            onKeyPress={e => e.key === 'Enter' && handleSend()}
-                            disabled={isLoading}
-                        />
-                        <CommandButton
+                {/* Input Bar */}
+                <div className="px-5 py-4 border-t border-white/[0.04] bg-black/20">
+                    <div className="flex gap-3 items-center">
+                        <div className="flex-1 relative">
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={e => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                disabled={isLoading}
+                                placeholder="Ask something..."
+                                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/10 transition-all font-normal"
+                            />
+                        </div>
+                        <button
                             onClick={handleSend}
                             disabled={!input.trim() || isLoading}
-                            className="px-10"
+                            className="px-6 py-3 bg-primary/10 border border-primary/20 text-primary font-heading text-xs font-semibold tracking-wider uppercase rounded-xl hover:bg-primary/20 hover:shadow-glow disabled:opacity-20 disabled:pointer-events-none transition-all"
                         >
-                            DEPLOY
-                        </CommandButton>
+                            Send
+                        </button>
                     </div>
                 </div>
             </GlassCard>
 
-            {/* Retrieval Sources Block (Proof of RAG) */}
-            <GlassCard className="py-5 px-8">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Retrieval_Context_Manifest</h3>
-                    <div className="h-[1px] flex-1 mx-6 bg-white/5" />
-                    <span className="text-[10px] font-mono font-bold text-primary italic uppercase tracking-widest">
-                        {lastAssistantMsg?.sources?.length || 0} Nodes_Active
+            {/* Retrieval Sources Panel (RAG proof) */}
+            <GlassCard className="!p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-[11px] font-semibold text-slate-400 tracking-wide">Retrieval Sources</h3>
+                    <span className="text-[10px] font-mono text-primary/50">
+                        {lastAssistantMsg?.sources?.length || 0} active
                     </span>
                 </div>
-
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2">
                     {lastAssistantMsg?.sources && Array.isArray(lastAssistantMsg.sources) && lastAssistantMsg.sources.length > 0 ? (
                         lastAssistantMsg.sources.map((s, i) => (
-                            <div key={i} className="px-3 py-1.5 bg-primary/5 border border-primary/10 rounded-lg flex items-center gap-3 group hover:border-primary/40 transition-all cursor-default">
-                                <span className="text-[9px] font-mono font-bold text-primary uppercase">SRC::{s.source || 'CACHE_NODE'}</span>
-                                <div className="w-[1px] h-3 bg-white/10" />
-                                <span className="text-[9px] font-mono text-slate-500 uppercase">FIT: {s.relevance || 0}%</span>
+                            <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 border border-primary/10 rounded-lg hover:border-primary/30 transition-all">
+                                <div className="w-1 h-1 rounded-full bg-primary/50" />
+                                <span className="text-[10px] font-mono text-primary/70">{s.source || 'unknown'}</span>
+                                <span className="text-[9px] font-mono text-slate-600">{s.relevance || 0}%</span>
                             </div>
                         ))
                     ) : (
-                        <span className="text-[9px] font-mono text-slate-700 uppercase tracking-widest italic">No context nodes localized in current handshake.</span>
+                        <p className="text-[11px] text-slate-600 italic">No context sources in current response. Upload documents to build the index.</p>
                     )}
                 </div>
             </GlassCard>
 
+            {/* Error */}
             {error && (
-                <div className="px-6 py-4 bg-red-500/5 border border-red-500/20 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-4 animate-shake">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
-                    System_Fault: {error}
+                <div className="px-4 py-3 bg-red-500/5 border border-red-500/15 text-red-400 rounded-xl text-[11px] font-medium flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                    {error}
                 </div>
             )}
         </div>

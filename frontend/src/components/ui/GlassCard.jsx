@@ -1,13 +1,13 @@
 import React from 'react';
 
-export default function GlassCard({ children, className = "", noPadding = false }) {
+export default function GlassCard({ children, className = "", noPadding = false, hover = true }) {
     return (
         <div className={`
-      bg-cardDark backdrop-blur-xl border border-primary/10 rounded-xl shadow-glow 
-      transition-all duration-300 hover:border-primary/20
-      ${noPadding ? '' : 'p-6'} 
-      ${className}
-    `}>
+            glass
+            ${hover ? 'hover:border-primary/20 hover:shadow-glow transition-all duration-300' : ''}
+            ${noPadding ? '' : 'p-6'} 
+            ${className}
+        `}>
             {children}
         </div>
     );

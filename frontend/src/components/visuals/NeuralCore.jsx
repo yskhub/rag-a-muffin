@@ -5,41 +5,42 @@ export default function NeuralCore() {
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setRotation((prev) => (prev + 0.5) % 360);
+            setRotation((prev) => (prev + 0.3) % 360);
         }, 16);
         return () => clearInterval(interval);
     }, []);
 
     return (
-        <div className="relative w-40 h-40 flex items-center justify-center">
-            {/* Outer Shell */}
+        <div className="relative w-32 h-32 flex items-center justify-center">
+            {/* Outer ring */}
             <div
-                className="absolute w-full h-full rounded-full border border-primary/10"
+                className="absolute w-full h-full rounded-full border border-primary/8"
                 style={{ transform: `rotate(${rotation}deg)` }}
             />
 
-            {/* Dynamic Rings */}
+            {/* Middle ring - dashed */}
             <div
-                className="absolute w-[85%] h-[85%] rounded-full border border-accent/20 border-dashed"
-                style={{ transform: `rotate(-${rotation * 1.2}deg)` }}
+                className="absolute w-[80%] h-[80%] rounded-full border border-primary/12 border-dashed"
+                style={{ transform: `rotate(-${rotation * 1.3}deg)` }}
             />
 
+            {/* Inner ring */}
             <div
-                className="absolute w-[70%] h-[70%] rounded-full border border-primary/30"
-                style={{ transform: `rotate(${rotation * 0.8}deg)` }}
+                className="absolute w-[60%] h-[60%] rounded-full border border-primary/20"
+                style={{ transform: `rotate(${rotation * 0.7}deg)` }}
             />
 
-            {/* Core Energy */}
-            <div className="w-12 h-12 bg-primary/10 rounded-full blur-xl animate-pulse" />
-            <div className="absolute w-4 h-4 bg-primary rounded-full shadow-[0_0_15px_#00f0ff]" />
+            {/* Core glow */}
+            <div className="w-10 h-10 bg-primary/8 rounded-full blur-xl animate-pulse" />
+            <div className="absolute w-3 h-3 bg-primary rounded-full shadow-[0_0_12px_rgba(0,240,255,0.4)]" />
 
-            {/* Data Nodes */}
-            {[0, 90, 180, 270].map((angle, i) => (
+            {/* Orbital nodes */}
+            {[0, 120, 240].map((angle, i) => (
                 <div
                     key={i}
-                    className="absolute w-1 h-1 bg-accent rounded-full"
+                    className="absolute w-1 h-1 bg-primary/60 rounded-full"
                     style={{
-                        transform: `rotate(${rotation * 1.5 + angle}deg) translateX(55px)`
+                        transform: `rotate(${rotation * 1.2 + angle}deg) translateX(48px)`
                     }}
                 />
             ))}

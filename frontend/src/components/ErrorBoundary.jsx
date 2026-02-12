@@ -1,36 +1,49 @@
 import React from 'react';
 
 class ErrorBoundary extends React.Component {
-    state = { hasError: false, error: null };
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
 
     static getDerivedStateFromError(error) {
         return { hasError: true, error };
     }
 
+    componentDidCatch(error, errorInfo) {
+        console.error('ErrorBoundary caught:', error, errorInfo);
+    }
+
     render() {
         if (this.state.hasError) {
             return (
-                <div className="min-h-screen flex items-center justify-center bg-[#020617] text-white font-mono p-4">
-                    <div className="max-w-2xl w-full bg-red-950/20 border border-red-500/30 rounded-2xl p-8 shadow-2xl">
-                        <div className="text-6xl mb-6">😵</div>
-                        <h1 className="text-2xl font-bold mb-2 uppercase tracking-tighter text-red-500">System_Critical_Failure</h1>
-                        <p className="text-slate-400 mb-8 text-sm">A terminal error occurred in the neural core. Diagnostics required.</p>
+                <div className="min-h-screen flex items-center justify-center bg-[#020617] text-white p-6">
+                    <div className="max-w-lg w-full text-center">
+                        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                            <span className="text-2xl">⚠</span>
+                        </div>
+                        <h1 className="text-xl font-semibold mb-2">Something went wrong</h1>
+                        <p className="text-sm text-slate-500 mb-6">An unexpected error occurred in the application.</p>
 
-                        <div className="bg-black/40 rounded-lg p-4 mb-8 overflow-x-auto text-left">
-                            <p className="text-red-400 font-bold mb-2">Error: {this.state.error?.message || 'Unknown Error'}</p>
-                            <pre className="text-[10px] text-slate-500 leading-tight">
-                                {this.state.error?.stack?.split('\n').slice(0, 5).join('\n')}
+                        <div className="bg-slate-900/50 rounded-xl p-4 mb-6 text-left border border-white/[0.06]">
+                            <p className="text-xs text-red-400 font-mono mb-2">{this.state.error?.message || 'Unknown error'}</p>
+                            <pre className="text-[9px] text-slate-600 font-mono leading-relaxed overflow-x-auto">
+                                {this.state.error?.stack?.split('\n').slice(0, 4).join('\n')}
                             </pre>
                         </div>
 
-                        <div className="flex gap-4">
-                            <button onClick={() => window.location.reload()}
-                                className="px-6 py-3 bg-red-500/20 border border-red-500/50 text-red-500 rounded-lg hover:bg-red-500/30 transition-all uppercase text-[10px] font-bold tracking-widest">
-                                Re-Initialize_Engine
+                        <div className="flex gap-3 justify-center">
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-5 py-2.5 bg-white/[0.05] border border-white/[0.08] text-sm font-medium text-white rounded-lg hover:bg-white/[0.08] transition-all"
+                            >
+                                Reload Page
                             </button>
-                            <button onClick={() => { localStorage.clear(); window.location.reload(); }}
-                                className="px-6 py-3 bg-slate-800 border border-white/10 text-white rounded-lg hover:bg-slate-700 transition-all uppercase text-[10px] font-bold tracking-widest">
-                                WIPE_PERSISTENCE (FIX_STORAGE)
+                            <button
+                                onClick={() => { localStorage.clear(); window.location.reload(); }}
+                                className="px-5 py-2.5 bg-red-500/10 border border-red-500/20 text-sm font-medium text-red-400 rounded-lg hover:bg-red-500/15 transition-all"
+                            >
+                                Clear Data & Reload
                             </button>
                         </div>
                     </div>

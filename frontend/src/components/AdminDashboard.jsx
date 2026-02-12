@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { documentsApi, adminApi } from '../services/api';
 import DocumentUpload from './DocumentUpload';
 import GlassCard from './ui/GlassCard';
-import CommandButton from './ui/CommandButton';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState({ total_documents: 0 });
     const [sources, setSources] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [seeding, setSeeding] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -21,18 +21,18 @@ const AdminDashboard = () => {
             setStats(s || { total_documents: 0 });
             setSources(src?.sources || []);
         } catch (e) {
-            setError("Sync Failure: Context Engine Unreachable");
+            setError("Failed to connect to backend");
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    useEffect(() => { fetchData(); }, []);
 
     const handleSeed = async () => {
-        try { await adminApi.seedSampleData(); fetchData(); } catch (e) { }
+        setSeeding(true);
+        try { await adminApi.seedSampleData(); await fetchData(); } catch (e) { }
+        setSeeding(false);
     };
 
     const handleDelete = async (name) => {
@@ -46,63 +46,69 @@ const AdminDashboard = () => {
     );
 
     return (
-        <div className="flex-1 flex flex-col gap-10 overflow-hidden">
-
-            {/* Control Panel Header */}
-            <div className="flex justify-between items-end border-b border-primary/10 pb-8 px-2">
-                <div className="flex flex-col">
-                    <h2 className="text-3xl font-heading font-black text-white tracking-widest uppercase italic">
-                        Control_Panel
-                    </h2>
-                    <p className="text-[10px] font-mono text-primary/40 tracking-[0.4em] uppercase mt-2">Engine_Management // Security_Auth_Level_01</p>
+        <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+            {/* Header */}
+            <div className="flex justify-between items-center pb-4 border-b border-white/[0.06]">
+                <div>
+                    <h2 className="font-heading text-xl font-semibold text-white">Admin Dashboard</h2>
+                    <p className="text-[11px] text-slate-500 mt-1">Manage documents, seed data, and monitor the knowledge base.</p>
                 </div>
-                <div className="flex gap-4">
-                    <CommandButton onClick={fetchData} variant="ghost">Refresh_Data</CommandButton>
+                <div className="flex gap-3">
+                    <button onClick={fetchData} className="px-4 py-2 text-[11px] font-medium text-slate-400 bg-white/[0.03] border border-white/[0.06] rounded-lg hover:bg-white/[0.06] transition-all">
+                        Refresh
+                    </button>
                     <Link to="/">
-                        <CommandButton variant="danger">Terminate_Session</CommandButton>
+                        <button className="px-4 py-2 text-[11px] font-medium text-primary bg-primary/5 border border-primary/15 rounded-lg hover:bg-primary/10 transition-all">
+                            ← Back to Chat
+                        </button>
                     </Link>
                 </div>
             </div>
 
             {error && (
-                <div className="p-6 bg-red-500/5 border border-red-500/20 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-4">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                <div className="px-4 py-3 bg-red-500/5 border border-red-500/15 text-red-400 rounded-xl text-[11px] font-medium flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
                     {error}
                 </div>
             )}
 
-            {/* Dashboard Content */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-12">
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-
-                    {/* Stats Module */}
-                    <div className="flex flex-col gap-6">
-                        <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 pl-2 border-l-2 border-primary/30">Persistence_Metrics</h3>
-                        <div className="grid grid-cols-2 gap-6">
+                    {/* Stats */}
+                    <div className="space-y-4">
+                        <h3 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Knowledge Base Stats</h3>
+                        <div className="grid grid-cols-2 gap-3">
                             {[
-                                { l: 'Indexed_Vectors', v: stats.total_documents },
-                                { l: 'Active_Nodes', v: sources.length },
-                                { l: 'Engine_Cost', v: '$0.00' },
-                                { l: 'Uptime_Rating', v: '99.9%' }
+                                { l: 'Indexed Documents', v: stats.total_documents, color: 'text-primary' },
+                                { l: 'Active Sources', v: sources.length, color: 'text-emerald-400' },
+                                { l: 'Engine Cost', v: '$0.00', color: 'text-white' },
+                                { l: 'Uptime', v: '99.9%', color: 'text-violet-400' },
                             ].map((m, i) => (
-                                <GlassCard key={i} className="py-8 text-center hover:scale-[1.02] transition-transform">
-                                    <p className="text-[9px] font-black text-primary/40 uppercase tracking-widest mb-2">{m.l}</p>
-                                    <p className="text-4xl font-mono font-bold text-white tracking-tighter">{m.v}</p>
+                                <GlassCard key={i} className="!p-5 text-center">
+                                    <p className="text-[9px] font-medium text-slate-500 uppercase tracking-wider mb-2">{m.l}</p>
+                                    <p className={`text-2xl font-heading font-bold ${m.color} tracking-tight`}>{m.v}</p>
                                 </GlassCard>
                             ))}
                         </div>
                     </div>
 
-                    {/* Operations Module */}
-                    <div className="flex flex-col gap-6">
-                        <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 pl-2 border-l-2 border-primary/30">System_Operations</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
-                            <GlassCard className="flex flex-col gap-6">
-                                <h4 className="text-[10px] font-black text-primary/40 uppercase tracking-widest">Initialization_Protocols</h4>
-                                <CommandButton onClick={handleSeed} className="py-4">Seed_Sample_Data</CommandButton>
-                                <p className="text-[9px] font-mono text-slate-500 leading-relaxed italic">
-                                    Inject default knowledge fragments into the ChromaDB vector engine to populate the RAG context.
+                    {/* Operations */}
+                    <div className="space-y-4">
+                        <h3 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Operations</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <GlassCard className="flex flex-col gap-4">
+                                <h4 className="text-[11px] font-semibold text-slate-400">Seed Sample Data</h4>
+                                <button
+                                    onClick={handleSeed}
+                                    disabled={seeding}
+                                    className="px-4 py-3 bg-primary/10 border border-primary/20 text-primary text-xs font-semibold rounded-lg hover:bg-primary/20 disabled:opacity-30 transition-all"
+                                >
+                                    {seeding ? 'Seeding...' : 'Initialize Sample Data'}
+                                </button>
+                                <p className="text-[10px] text-slate-600 leading-relaxed">
+                                    Inject default knowledge fragments into ChromaDB to populate the RAG context index.
                                 </p>
                             </GlassCard>
                             <DocumentUpload onUploadComplete={fetchData} />
@@ -110,30 +116,30 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                {/* Node Manager */}
-                <div className="flex flex-col gap-6">
-                    <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 pl-2 border-l-2 border-primary/30">Localized_Context_Nodes</h3>
-                    <GlassCard noPadding className="overflow-hidden">
-                        <div className="p-6 border-b border-white/5 bg-white/[0.02]">
-                            <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Source_Manifest // {sources.length} Objects</span>
-                        </div>
+                {/* Document Sources */}
+                <div className="space-y-4">
+                    <h3 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        Indexed Sources · {sources.length} documents
+                    </h3>
+                    <GlassCard noPadding>
                         {sources.length === 0 ? (
-                            <div className="py-24 text-center text-[11px] font-bold uppercase tracking-[0.8em] text-white/5 italic">
-                                NO_NODES_LOCALIZED_IN_ENGINE
+                            <div className="py-16 text-center">
+                                <p className="text-sm text-slate-600">No documents indexed yet.</p>
+                                <p className="text-[11px] text-slate-700 mt-1">Upload documents or seed sample data to get started.</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0">
+                            <div className="divide-y divide-white/[0.04]">
                                 {sources.map(s => (
-                                    <div key={s} className="p-6 border border-white/5 flex justify-between items-center hover:bg-primary/[0.02] transition-all group">
-                                        <div className="flex items-center gap-4 min-w-0">
-                                            <span className="text-2xl opacity-20 group-hover:opacity-100 transition-opacity">💿</span>
-                                            <span className="text-xs font-mono font-bold text-slate-400 truncate uppercase tracking-widest">{s}</span>
+                                    <div key={s} className="px-5 py-4 flex justify-between items-center hover:bg-white/[0.02] transition-all group">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center text-[11px]">📄</div>
+                                            <span className="text-sm font-medium text-slate-300">{s}</span>
                                         </div>
                                         <button
                                             onClick={() => handleDelete(s)}
-                                            className="text-[9px] font-black text-red-500/20 hover:text-red-500 transition-colors uppercase"
+                                            className="text-[10px] font-medium text-red-500/30 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-red-500/5"
                                         >
-                                            Purge
+                                            Delete
                                         </button>
                                     </div>
                                 ))}
