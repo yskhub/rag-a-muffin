@@ -1,70 +1,82 @@
 import React, { useState } from 'react';
 
 const MessageBubble = ({ message }) => {
-    const [showSources, setShowSources] = useState(false);
     const isUser = message.role === 'user';
-    const hasSources = message.sources?.length > 0;
+    const [showSources, setShowSources] = useState(false);
 
     return (
-        <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} w-full group/msg`}>
-            <div className={`flex flex-col gap-1 max-w-[85%] md:max-w-[75%]`}>
-                {/* Message Container */}
-                <div className={`
-                    relative px-5 py-3.5 rounded-[24px] text-sm leading-relaxed transition-all duration-300
-                    ${isUser
-                        ? 'bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-lg shadow-indigo-500/10 rounded-tr-none'
-                        : 'glass text-gray-200 border-white/5 rounded-tl-none hover:border-white/10'
-                    }
-                `}>
-                    <p className="whitespace-pre-wrap">{message.content}</p>
+        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} gap-2 group/msg`}>
+            {/* Header Metadata */}
+            <div className="flex items-center gap-3 px-1">
+                <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${isUser ? 'order-2 text-indigo-400' : 'text-purple-400'}`}>
+                    {isUser ? 'Operator_Log' : 'Muffin_Pulse'}
+                </span>
+                <span className="text-[9px] font-mono text-gray-600 tabular-nums">
+                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+            </div>
 
-                    {/* Sources Section */}
-                    {!isUser && hasSources && (
-                        <div className="mt-4 pt-3 border-t border-white/5">
-                            <button
-                                onClick={() => setShowSources(!showSources)}
-                                className="flex items-center gap-2 text-[11px] uppercase tracking-wider font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
-                            >
-                                <span className={`transition-transform duration-300 ${showSources ? 'rotate-90' : ''}`}>▶</span>
-                                {message.sources.length} Contextual {message.sources.length === 1 ? 'Source' : 'Sources'}
-                            </button>
-
-                            {showSources && (
-                                <div className="mt-3 space-y-2 animate-slide-up">
-                                    {message.sources.map((s, i) => (
-                                        <div key={i} className="flex flex-col gap-1 p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                                            <div className="flex justify-between items-center text-[10px] font-semibold">
-                                                <span className="text-gray-400 truncate max-w-[150px]">📄 {s.source}</span>
-                                                <span className="text-indigo-400">{s.relevance}% Match</span>
-                                            </div>
-                                            {s.page && <span className="text-[10px] text-gray-500">Page {s.page}</span>}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+            {/* Bubble Content */}
+            <div className={`
+                relative px-6 py-4 transition-all duration-300 max-w-[85%]
+                ${isUser
+                    ? 'bg-indigo-600/10 border border-indigo-500/30 text-indigo-100 rounded-2xl rounded-tr-none'
+                    : 'glass text-gray-200 border-white/10 rounded-2xl rounded-tl-none hover:border-white/20'
+                }
+            `}>
+                <div className="text-[13px] leading-relaxed font-medium whitespace-pre-wrap">
+                    {message.content}
                 </div>
 
-                {/* Actions & Timestamp */}
-                <div className={`
-                    text-[10px] font-medium tracking-wide flex items-center gap-3 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-300 mt-1
-                    ${isUser ? 'justify-end text-gray-500' : 'justify-start text-gray-500'}
-                `}>
-                    {!isUser && (
+                {!isUser && message.sources && message.sources.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-white/5">
                         <button
-                            onClick={() => {
-                                navigator.clipboard.writeText(message.content);
-                                // Optional: add a temporary 'Copied!' state here
-                            }}
-                            className="hover:text-indigo-400 transition-colors uppercase tracking-widest font-bold"
+                            onClick={() => setShowSources(!showSources)}
+                            className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:text-indigo-400 transition-colors"
                         >
-                            Copy
+                            <span>{showSources ? '▼' : '▶'}</span>
+                            KNOWLEDGE_FRAGMENTS ({message.sources.length})
                         </button>
-                    )}
-                    <span>{new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    {isUser && <span className="text-indigo-500">✓</span>}
-                </div>
+
+                        {showSources && (
+                            <div className="mt-4 space-y-2 animate-slide-up">
+                                {message.sources.map((source, i) => (
+                                    <div key={i} className="p-3 bg-white/[0.02] border border-white/5 rounded-lg group/source hover:bg-white/[0.04] transition-all">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className="text-[10px] font-mono font-bold text-indigo-400/80 truncate pr-4 uppercase">
+                                                {source.filename || `node_pk_${i}`}
+                                            </span>
+                                            <span className="text-[8px] font-mono text-gray-600 bg-white/5 px-1.5 py-0.5 rounded">
+                                                SCORE: {(source.score * 100).toFixed(1)}%
+                                            </span>
+                                        </div>
+                                        <p className="text-[11px] text-gray-500 italic leading-relaxed line-clamp-2 italic">
+                                            "{source.content}"
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className={`
+                flex items-center gap-4 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-300 px-1
+                ${isUser ? 'flex-row-reverse' : ''}
+            `}>
+                {!isUser && (
+                    <button
+                        onClick={() => {
+                            navigator.clipboard.writeText(message.content);
+                        }}
+                        className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600 hover:text-white transition-colors"
+                    >
+                        Copy
+                    </button>
+                )}
+                {isUser && <span className="text-indigo-500 text-[10px]">SYNC_COMPLETE</span>}
             </div>
         </div>
     );
