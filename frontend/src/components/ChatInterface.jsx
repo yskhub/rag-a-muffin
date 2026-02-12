@@ -89,8 +89,8 @@ const ChatInterface = () => {
                                 <div className={`
                                     px-5 py-3.5 text-[13.5px] leading-relaxed
                                     ${msg.role === 'user'
-                                        ? 'bg-primary/8 border border-primary/20 text-white rounded-2xl rounded-tr-sm'
-                                        : 'bg-slate-800/50 border border-white/[0.06] text-slate-200 rounded-2xl rounded-tl-sm'
+                                        ? 'bg-cyan-950/80 border border-primary/25 text-white rounded-2xl rounded-tr-sm'
+                                        : 'bg-slate-800/80 border border-white/10 text-slate-100 rounded-2xl rounded-tl-sm'
                                     }
                                 `}>
                                     <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -129,7 +129,7 @@ const ChatInterface = () => {
                                     </div>
                                     <div className="space-y-1">
                                         {LOADING_STEPS.map((step, i) => (
-                                            <p key={i} className={`text-[10px] font-mono transition-all duration-300 ${i <= loadingStep ? 'text-primary/50' : 'text-slate-700'
+                                            <p key={i} className={`text-[11px] font-mono transition-all duration-300 ${i <= loadingStep ? 'text-primary/80' : 'text-slate-500'
                                                 } ${i === loadingStep ? 'loading-step' : ''}`}>
                                                 {i < loadingStep ? '✓' : i === loadingStep ? '►' : '○'} {step}
                                             </p>
@@ -154,7 +154,7 @@ const ChatInterface = () => {
                                 onKeyDown={handleKeyDown}
                                 disabled={isLoading}
                                 placeholder="Ask something..."
-                                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-5 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/10 transition-all font-normal"
+                                className="w-full bg-slate-900/60 border border-white/10 rounded-xl px-5 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/10 transition-all font-normal"
                             />
                         </div>
                         <button

@@ -85,7 +85,7 @@ function SectionLabel({ title }) {
     return (
         <div className="flex items-center gap-3 px-1">
             <div className="h-px w-4 bg-primary/20" />
-            <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">{title}</h3>
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">{title}</h3>
         </div>
     );
 }
@@ -93,7 +93,7 @@ function SectionLabel({ title }) {
 function MetricCard({ label, value, color = "text-white" }) {
     return (
         <GlassCard className="!p-4 !rounded-xl">
-            <p className="text-[9px] font-medium text-slate-500 uppercase tracking-wider mb-2">{label}</p>
+            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-2">{label}</p>
             <p className={`text-xl font-heading font-bold ${color} tracking-tight`}>{value}</p>
         </GlassCard>
     );

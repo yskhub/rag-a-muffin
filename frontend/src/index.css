@@ -67,19 +67,19 @@ code,
   font-family: var(--font-mono);
 }
 
-/* Enterprise Glass */
+/* Enterprise Glass — brighter for text contrast */
 .glass {
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 16px;
 }
 
 .glass-subtle {
-  background: rgba(15, 23, 42, 0.3);
+  background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
 }
 
