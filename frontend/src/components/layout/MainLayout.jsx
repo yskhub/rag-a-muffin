@@ -30,10 +30,10 @@ export default function MainLayout({ children }) {
 
                         <div className="grid grid-cols-2 gap-4">
                             {[
-                                { label: 'Neural Sync', val: metrics.sync.toFixed(1) + '%' },
-                                { label: 'Memory Load', val: metrics.memory.toFixed(1) + '%' },
-                                { label: 'Index Count', val: metrics.fragments.toLocaleString() },
-                                { label: 'Neuro Load', val: metrics.neuroLoad + '%' }
+                                { label: 'Neural Sync', val: (metrics?.sync?.toFixed(1) || '0.0') + '%' },
+                                { label: 'Memory Load', val: (metrics?.memory?.toFixed(1) || '0.0') + '%' },
+                                { label: 'Index Count', val: (metrics?.fragments?.toLocaleString() || '0') },
+                                { label: 'Neuro Load', val: (metrics?.neuroLoad || '0.0') + '%' }
                             ].map((m, i) => (
                                 <GlassCard key={i} className="p-4 border-white/5 hover:border-primary/30">
                                     <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">{m.label}</p>

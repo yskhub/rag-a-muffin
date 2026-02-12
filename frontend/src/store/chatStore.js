@@ -36,7 +36,15 @@ const useChatStore = create(
             clearMessages: () => set({ messages: [], sessionId: generateSessionId(), error: null }),
             clearError: () => set({ error: null }),
         }),
-        { name: 'chat-storage', partialize: (state) => ({ messages: state.messages.slice(-50), sessionId: state.sessionId }) }
+        {
+            name: 'chat-storage',
+            partialize: (state) => ({ messages: state.messages.slice(-50), sessionId: state.sessionId }),
+            onRehydrateStorage: (state) => {
+                if (state && !Array.isArray(state.messages)) {
+                    state.messages = [];
+                }
+            }
+        }
     )
 );
 

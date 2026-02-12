@@ -40,7 +40,7 @@ const ChatInterface = () => {
     };
 
     // Get the latest assistant message to show retrieval sources at the bottom
-    const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
+    const lastAssistantMsg = [...(messages || [])].reverse().find(m => m.role === 'assistant');
 
     return (
         <div className="flex flex-col h-full gap-6 overflow-hidden">
@@ -126,12 +126,12 @@ const ChatInterface = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                    {lastAssistantMsg?.sources && lastAssistantMsg.sources.length > 0 ? (
+                    {lastAssistantMsg?.sources && Array.isArray(lastAssistantMsg.sources) && lastAssistantMsg.sources.length > 0 ? (
                         lastAssistantMsg.sources.map((s, i) => (
                             <div key={i} className="px-3 py-1.5 bg-primary/5 border border-primary/10 rounded-lg flex items-center gap-3 group hover:border-primary/40 transition-all cursor-default">
-                                <span className="text-[9px] font-mono font-bold text-primary uppercase">SRC::{s.filename || 'CACHE_NODE'}</span>
+                                <span className="text-[9px] font-mono font-bold text-primary uppercase">SRC::{s.source || 'CACHE_NODE'}</span>
                                 <div className="w-[1px] h-3 bg-white/10" />
-                                <span className="text-[9px] font-mono text-slate-500 uppercase">FIT: {(s.score * 100).toFixed(0)}%</span>
+                                <span className="text-[9px] font-mono text-slate-500 uppercase">FIT: {s.relevance || 0}%</span>
                             </div>
                         ))
                     ) : (
