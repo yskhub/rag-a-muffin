@@ -1,28 +1,59 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { documentsApi, adminApi } from '../services/api';
 import DocumentUpload from './DocumentUpload';
 
 const AdminDashboard = () => {
-    const [stats, setStats] = useState(null);
+    const [stats, setStats] = useState({ total_documents: 0 });
     const [sources, setSources] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const fetchData = async () => {
-        setLoading(true);
         try {
-            const [s, src] = await Promise.all([documentsApi.getStats(), documentsApi.getSources()]);
-            setStats(s); setSources(src.sources || []);
+            setError(null);
+            const [s, src] = await Promise.all([
+                documentsApi.getStats().catch(err => {
+                    console.error("Stats fetch error:", err);
+                    return { total_documents: 0 };
+                }),
+                documentsApi.getSources().catch(err => {
+                    console.error("Sources fetch error:", err);
+                    return { sources: [] };
+                })
+            ]);
+
+            setStats(s || { total_documents: 0 });
+            setSources(src?.sources || []);
         } catch (e) {
-            console.error("Failed to fetch admin data", e);
+            console.error("Critical admin data fetch failure:", e);
+            setError("Failed to synchronize with Knowledge Engine.");
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => {
+        fetchData();
+    }, []);
 
-    const handleSeed = async () => { await adminApi.seedSampleData(); fetchData(); };
-    const handleDelete = async (name) => { await documentsApi.deleteDocument(name); fetchData(); };
+    const handleSeed = async () => {
+        try {
+            await adminApi.seedSampleData();
+            await fetchData();
+        } catch (e) {
+            console.error("Seeding error:", e);
+        }
+    };
+
+    const handleDelete = async (name) => {
+        try {
+            await documentsApi.deleteDocument(name);
+            await fetchData();
+        } catch (e) {
+            console.error("Delete error:", e);
+        }
+    };
 
     if (loading) return (
         <div className="min-h-screen bg-[#0c0e14] flex items-center justify-center">
@@ -50,17 +81,23 @@ const AdminDashboard = () => {
                         </h1>
                         <p className="text-gray-500 font-medium tracking-wide pl-1">Knowledge Engine Management</p>
                     </div>
-                    <a href="/" className="px-8 py-3.5 bg-white text-black font-bold rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-white/5">
+                    <Link to="/" className="px-8 py-3.5 bg-white text-black font-bold rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-white/5">
                         ← Return to Interface
-                    </a>
+                    </Link>
                 </div>
+
+                {error && (
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-sm font-bold flex items-center gap-3 animate-slide-up">
+                        <span>⚠️</span> {error}
+                    </div>
+                )}
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
                     {[
-                        { label: 'Total Vectors', value: stats?.total_documents || 0, icon: '📊', color: 'indigo' },
-                        { label: 'Active Sources', value: sources.length, icon: '📁', color: 'purple' },
-                        { label: 'Compute Cost', value: '$0.00', icon: '💰', color: 'green' }
+                        { label: 'Total Vectors', value: stats?.total_documents || 0, icon: '📊' },
+                        { label: 'Active Sources', value: sources.length, icon: '📁' },
+                        { label: 'Compute Cost', value: '$0.00', icon: '💰' }
                     ].map((item, i) => (
                         <div key={i} className="glass p-8 rounded-[32px] border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 text-4xl opacity-10 group-hover:opacity-20 transition-opacity">
