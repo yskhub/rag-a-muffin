@@ -4,17 +4,25 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-        },
+        primary: "#00f0ff",
+        accent: "#0fffc1",
+        bgDark: "#020617",
+        cardDark: "rgba(15, 23, 42, 0.6)",
       },
+      boxShadow: {
+        glow: "0 0 15px rgba(0, 240, 255, 0.1)",
+        glowStrong: "0 0 25px rgba(0, 240, 255, 0.3)",
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        heading: ['Space Grotesk', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+        orbitron: ['Orbitron', 'sans-serif'],
+      }
     },
   },
   plugins: [],

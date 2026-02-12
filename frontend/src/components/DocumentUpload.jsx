@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { documentsApi } from '../services/api';
+import GlassCard from './ui/GlassCard';
 
 const DocumentUpload = ({ onUploadComplete }) => {
     const [uploading, setUploading] = useState(false);
@@ -9,11 +10,11 @@ const DocumentUpload = ({ onUploadComplete }) => {
 
     const handleFile = async (file) => {
         if (!file.name.endsWith('.pdf')) {
-            setMessage({ type: 'error', text: 'ERR: PDF_REQUIRED' });
+            setMessage({ type: 'error', text: 'ERR_INVALID_FORMAT_PDF_REQUIRED' });
             return;
         }
         if (file.size > 10 * 1024 * 1024) {
-            setMessage({ type: 'error', text: 'ERR: OVER_LIMIT [10MB]' });
+            setMessage({ type: 'error', text: 'ERR_FILE_OVER_LIMIT_10MB' });
             return;
         }
 
@@ -21,29 +22,27 @@ const DocumentUpload = ({ onUploadComplete }) => {
         setProgress(0);
         setMessage(null);
         try {
-            const result = await documentsApi.uploadDocument(file, (p) => setProgress(p));
-            setMessage({ type: 'success', text: `SUCCESS: ${result.filename} INDEXED` });
+            await documentsApi.uploadDocument(file, (p) => setProgress(p));
+            setMessage({ type: 'success', text: 'TRANSMISSION_COMPLETE_INDEXED' });
             onUploadComplete?.();
         } catch (e) {
-            setMessage({ type: 'error', text: 'ERR: EXTRACTION_FAILED' });
+            setMessage({ type: 'error', text: 'ERR_EXTRACTION_FAILURE' });
         } finally {
             setUploading(false);
         }
     };
 
     return (
-        <div className="glass p-8 rounded-[32px] border border-white/5 relative overflow-hidden group">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-8 text-indigo-400">
-                Knowledge_Intake
-            </h3>
+        <GlassCard className="flex flex-col gap-6 h-full relative overflow-hidden group">
+            <h4 className="text-[10px] font-black text-primary/40 uppercase tracking-widest">Knowledge_Intake_Gateway</h4>
 
             <div
                 onClick={() => !uploading && fileRef.current?.click()}
                 className={`
-                    border border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300
+                    flex-1 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-8 text-center cursor-pointer transition-all duration-500
                     ${uploading
-                        ? 'border-indigo-500/10 cursor-not-allowed opacity-50'
-                        : 'border-white/10 hover:border-indigo-500/40 hover:bg-white/[0.01]'
+                        ? 'border-primary/5 cursor-not-allowed opacity-40'
+                        : 'border-primary/10 hover:border-primary/40 hover:bg-primary/5 bg-black/20'
                     }
                 `}
             >
@@ -55,25 +54,25 @@ const DocumentUpload = ({ onUploadComplete }) => {
                     className="hidden"
                 />
 
-                <div className="text-4xl mb-6 opacity-30 group-hover:opacity-100 transition-opacity">📥</div>
+                <div className="text-4xl mb-6 opacity-20 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_10px_#00f0ff]">📁</div>
 
-                <p className="text-white text-[10px] font-black uppercase tracking-widest mb-2">
-                    {uploading ? 'Processing_Packet...' : 'Deploy_Source_File'}
+                <p className="text-white text-[11px] font-bold uppercase tracking-widest mb-2 font-heading">
+                    {uploading ? 'UPLOADING_PACKET...' : 'DEPLOY_SOURCE_FILE'}
                 </p>
-                <p className="text-gray-600 text-[8px] font-black uppercase tracking-widest">
-                    PDF Only &bull; 10MB Max
+                <p className="text-primary/20 text-[9px] font-mono uppercase tracking-[0.2em]">
+                    PDF_ONLY // 10MB_LIMIT
                 </p>
             </div>
 
             {uploading && (
-                <div className="mt-8 space-y-3 animate-slide-up">
-                    <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-indigo-400">
-                        <span>Ingestion_Progress</span>
-                        <span>{progress}%</span>
+                <div className="space-y-3 animate-slide-up">
+                    <div className="flex justify-between text-[10px] font-bold text-primary uppercase tracking-[0.2em]">
+                        <span>Ingestion...</span>
+                        <span className="font-mono">{progress}%</span>
                     </div>
-                    <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
+                    <div className="w-full bg-primary/10 rounded-full h-1 overflow-hidden shadow-inner">
                         <div
-                            className="bg-indigo-500 h-full transition-all duration-300"
+                            className="bg-primary h-full transition-all duration-300 shadow-[0_0_10px_#00f0ff]"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
@@ -81,15 +80,15 @@ const DocumentUpload = ({ onUploadComplete }) => {
             )}
 
             {message && (
-                <div className={`mt-8 p-4 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-3 animate-slide-up ${message.type === 'success'
-                        ? 'bg-green-500/5 border border-green-500/10 text-green-400/80'
-                        : 'bg-red-500/5 border border-red-500/10 text-red-400/80'
+                <div className={`p-4 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-4 animate-slide-up ${message.type === 'success'
+                        ? 'bg-green-500/5 border border-green-500/20 text-green-500/80'
+                        : 'bg-red-500/5 border border-red-500/20 text-red-500/80'
                     }`}>
-                    <span>{message.type === 'success' ? '✔' : '✘'}</span>
+                    <div className={`w-1.5 h-1.5 rounded-full ${message.type === 'success' ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
                     {message.text}
                 </div>
             )}
-        </div>
+        </GlassCard>
     );
 };
 

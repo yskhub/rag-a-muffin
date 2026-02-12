@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { documentsApi, adminApi } from '../services/api';
 import DocumentUpload from './DocumentUpload';
+import GlassCard from './ui/GlassCard';
+import CommandButton from './ui/CommandButton';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState({ total_documents: 0 });
@@ -13,21 +15,13 @@ const AdminDashboard = () => {
         try {
             setError(null);
             const [s, src] = await Promise.all([
-                documentsApi.getStats().catch(err => {
-                    console.error("Stats fetch error:", err);
-                    return { total_documents: 0 };
-                }),
-                documentsApi.getSources().catch(err => {
-                    console.error("Sources fetch error:", err);
-                    return { sources: [] };
-                })
+                documentsApi.getStats().catch(() => ({ total_documents: 0 })),
+                documentsApi.getSources().catch(() => ({ sources: [] }))
             ]);
-
             setStats(s || { total_documents: 0 });
             setSources(src?.sources || []);
         } catch (e) {
-            console.error("Critical admin data fetch failure:", e);
-            setError("Failed to synchronize with Knowledge Engine.");
+            setError("Sync Failure: Context Engine Unreachable");
         } finally {
             setLoading(false);
         }
@@ -38,126 +32,114 @@ const AdminDashboard = () => {
     }, []);
 
     const handleSeed = async () => {
-        try {
-            await adminApi.seedSampleData();
-            await fetchData();
-        } catch (e) {
-            console.error("Seeding error:", e);
-        }
+        try { await adminApi.seedSampleData(); fetchData(); } catch (e) { }
     };
 
     const handleDelete = async (name) => {
-        try {
-            await documentsApi.deleteDocument(name);
-            await fetchData();
-        } catch (e) {
-            console.error("Delete error:", e);
-        }
+        try { await documentsApi.deleteDocument(name); fetchData(); } catch (e) { }
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#020408] flex items-center justify-center">
-            <div className="relative">
-                <div className="animate-spin h-10 w-10 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full" />
-                <div className="absolute inset-0 bg-indigo-500 blur-2xl opacity-10" />
-            </div>
+        <div className="flex-1 flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#020408] text-gray-200 selection:bg-indigo-500/30 font-sans p-6 md:p-12 relative overflow-hidden">
-            <div className="grid-bg" />
+        <div className="flex-1 flex flex-col gap-10 overflow-hidden">
 
-            {/* Background Glows */}
-            <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-5%] left-[-5%] w-[40%] h-[40%] bg-indigo-600/5 blur-[120px] rounded-full" />
-            </div>
-
-            <div className="max-w-5xl mx-auto space-y-12 relative">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 animate-slide-up">
-                    <div className="space-y-1">
-                        <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-4 uppercase">
-                            <span className="w-10 h-10 bg-white/[0.03] rounded-xl border border-white/5 flex items-center justify-center text-xl">⚙️</span>
-                            System Control
-                        </h1>
-                        <p className="text-gray-500 text-[10px] font-bold tracking-[0.3em] uppercase pl-1">Knowledge Engine Management</p>
-                    </div>
-                    <Link to="/" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shadow-lg shadow-indigo-600/20">
-                        ← Exit System
+            {/* Control Panel Header */}
+            <div className="flex justify-between items-end border-b border-primary/10 pb-8 px-2">
+                <div className="flex flex-col">
+                    <h2 className="text-3xl font-heading font-black text-white tracking-widest uppercase italic">
+                        Control_Panel
+                    </h2>
+                    <p className="text-[10px] font-mono text-primary/40 tracking-[0.4em] uppercase mt-2">Engine_Management // Security_Auth_Level_01</p>
+                </div>
+                <div className="flex gap-4">
+                    <CommandButton onClick={fetchData} variant="ghost">Refresh_Data</CommandButton>
+                    <Link to="/">
+                        <CommandButton variant="danger">Terminate_Session</CommandButton>
                     </Link>
                 </div>
+            </div>
 
-                {error && (
-                    <div className="bg-red-500/5 border border-red-500/10 text-red-100 p-4 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 animate-slide-up">
-                        <span>⚠️</span> {error}
-                    </div>
-                )}
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
-                    {[
-                        { label: 'Neural Vectors', value: stats?.total_documents || 0, icon: '📊' },
-                        { label: 'Active Fragments', value: sources.length, icon: '📁' },
-                        { label: 'Compute Cost', value: '$0.00', icon: '💰' }
-                    ].map((item, i) => (
-                        <div key={i} className="glass p-8 rounded-[32px] border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 text-3xl opacity-5 group-hover:opacity-10 transition-opacity">
-                                {item.icon}
-                            </div>
-                            <p className="text-gray-600 text-[9px] font-black uppercase tracking-[0.2em] mb-4">{item.label}</p>
-                            <p className="text-4xl font-black text-white tracking-tight">{item.value}</p>
-                        </div>
-                    ))}
+            {error && (
+                <div className="p-6 bg-red-500/5 border border-red-500/20 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-4">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                    {error}
                 </div>
+            )}
 
-                {/* Tools Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-slide-up" style={{ animationDelay: '200ms' }}>
-                    <div className="glass p-8 rounded-[32px] border border-white/5">
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-8 flex items-center gap-3 text-indigo-400">
-                            Core_Operations
-                        </h3>
-                        <div className="space-y-4">
-                            <button onClick={handleSeed} className="w-full flex items-center justify-between px-6 py-4 bg-indigo-500/5 border border-indigo-500/10 text-indigo-400 rounded-xl hover:bg-indigo-500/10 font-black text-[10px] uppercase tracking-widest transition-all">
-                                Seed_Sample_Dataset
-                                <span>🌱</span>
-                            </button>
-                            <button onClick={fetchData} className="w-full flex items-center justify-between px-6 py-4 bg-white/[0.02] border border-white/5 text-gray-500 hover:text-white rounded-xl hover:bg-white/[0.05] font-black text-[10px] uppercase tracking-widest transition-all">
-                                Sync_Engine_Status
-                                <span>🔄</span>
-                            </button>
-                        </div>
-                    </div>
-                    <DocumentUpload onUploadComplete={fetchData} />
-                </div>
+            {/* Dashboard Content */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-12">
 
-                {/* Knowledge Base */}
-                <div className="glass p-8 rounded-[32px] border border-white/5 animate-slide-up" style={{ animationDelay: '300ms' }}>
-                    <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-8 text-indigo-400">
-                        Ingested_Knowledge_Base
-                    </h3>
-                    {sources.length === 0 ? (
-                        <div className="text-gray-600 text-center py-20 bg-white/[0.01] rounded-3xl border-2 border-dashed border-white/5 text-[10px] font-black uppercase tracking-widest">
-                            No knowledge fragments localized.
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {sources.map(s => (
-                                <div key={s} className="flex justify-between items-center bg-white/[0.01] hover:bg-white/[0.03] rounded-xl px-5 py-4 border border-white/5 transition-all group/item">
-                                    <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-10 h-10 bg-indigo-500/5 rounded-lg flex items-center justify-center text-indigo-500 text-sm">📄</div>
-                                        <span className="font-bold text-xs text-gray-400 truncate pr-4">{s}</span>
-                                    </div>
-                                    <button
-                                        onClick={() => handleDelete(s)}
-                                        className="text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-md bg-red-500/5 border border-red-500/10 hover:border-red-500/20 text-red-500/50 hover:text-red-500 transition-all opacity-0 group-hover/item:opacity-100"
-                                    >
-                                        Expunge
-                                    </button>
-                                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+                    {/* Stats Module */}
+                    <div className="flex flex-col gap-6">
+                        <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 pl-2 border-l-2 border-primary/30">Persistence_Metrics</h3>
+                        <div className="grid grid-cols-2 gap-6">
+                            {[
+                                { l: 'Indexed_Vectors', v: stats.total_documents },
+                                { l: 'Active_Nodes', v: sources.length },
+                                { l: 'Engine_Cost', v: '$0.00' },
+                                { l: 'Uptime_Rating', v: '99.9%' }
+                            ].map((m, i) => (
+                                <GlassCard key={i} className="py-8 text-center hover:scale-[1.02] transition-transform">
+                                    <p className="text-[9px] font-black text-primary/40 uppercase tracking-widest mb-2">{m.l}</p>
+                                    <p className="text-4xl font-mono font-bold text-white tracking-tighter">{m.v}</p>
+                                </GlassCard>
                             ))}
                         </div>
-                    )}
+                    </div>
+
+                    {/* Operations Module */}
+                    <div className="flex flex-col gap-6">
+                        <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 pl-2 border-l-2 border-primary/30">System_Operations</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+                            <GlassCard className="flex flex-col gap-6">
+                                <h4 className="text-[10px] font-black text-primary/40 uppercase tracking-widest">Initialization_Protocols</h4>
+                                <CommandButton onClick={handleSeed} className="py-4">Seed_Sample_Data</CommandButton>
+                                <p className="text-[9px] font-mono text-slate-500 leading-relaxed italic">
+                                    Inject default knowledge fragments into the ChromaDB vector engine to populate the RAG context.
+                                </p>
+                            </GlassCard>
+                            <DocumentUpload onUploadComplete={fetchData} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Node Manager */}
+                <div className="flex flex-col gap-6">
+                    <h3 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 pl-2 border-l-2 border-primary/30">Localized_Context_Nodes</h3>
+                    <GlassCard noPadding className="overflow-hidden">
+                        <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+                            <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Source_Manifest // {sources.length} Objects</span>
+                        </div>
+                        {sources.length === 0 ? (
+                            <div className="py-24 text-center text-[11px] font-bold uppercase tracking-[0.8em] text-white/5 italic">
+                                NO_NODES_LOCALIZED_IN_ENGINE
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0">
+                                {sources.map(s => (
+                                    <div key={s} className="p-6 border border-white/5 flex justify-between items-center hover:bg-primary/[0.02] transition-all group">
+                                        <div className="flex items-center gap-4 min-w-0">
+                                            <span className="text-2xl opacity-20 group-hover:opacity-100 transition-opacity">💿</span>
+                                            <span className="text-xs font-mono font-bold text-slate-400 truncate uppercase tracking-widest">{s}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDelete(s)}
+                                            className="text-[9px] font-black text-red-500/20 hover:text-red-500 transition-colors uppercase"
+                                        >
+                                            Purge
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </GlassCard>
                 </div>
             </div>
         </div>
