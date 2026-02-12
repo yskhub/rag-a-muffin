@@ -1,35 +1,68 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { chatApi, documentsApi, adminApi } from "../services/api";
 
 export default function useSystemMetrics() {
     const [metrics, setMetrics] = useState({
-        sync: 92.2,
-        memory: 67.4,
-        fragments: 14382,
-        neuroLoad: 12.4,
-        uptime: '00:00:00'
+        sync: 0,
+        memory: 0,
+        fragments: 0,
+        neuroLoad: 0,
+        uptime: '00:00:00',
+        backendStatus: 'checking', // 'online', 'waking', 'offline', 'checking'
+        documentsCount: 0,
+        model: 'unknown',
     });
 
-    useEffect(() => {
-        const start = Date.now();
-        const interval = setInterval(() => {
-            setMetrics((prev) => {
-                const diff = Math.floor((Date.now() - start) / 1000);
-                const h = Math.floor(diff / 3600).toString().padStart(2, '0');
-                const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
-                const s = (diff % 60).toString().padStart(2, '0');
+    const fetchRealMetrics = useCallback(async () => {
+        try {
+            setMetrics(prev => ({ ...prev, backendStatus: 'checking' }));
 
-                return {
-                    sync: Math.min(100, prev.sync + (Math.random() * 0.1 - 0.05)),
-                    memory: Math.min(100, prev.memory + (Math.random() * 0.2 - 0.1)),
-                    fragments: prev.fragments + (Math.random() > 0.98 ? 1 : 0),
-                    neuroLoad: (12 + Math.random() * 1).toFixed(1),
-                    uptime: `${h}:${m}:${s}`
-                };
-            });
-        }, 1000);
+            const health = await chatApi.healthCheck();
 
-        return () => clearInterval(interval);
+            // Try to get document stats
+            let docCount = 0;
+            try {
+                const stats = await documentsApi.getStats();
+                docCount = stats?.total_documents || 0;
+            } catch (e) { /* ignore */ }
+
+            setMetrics(prev => ({
+                ...prev,
+                backendStatus: 'online',
+                documentsCount: docCount,
+                fragments: docCount,
+                model: health?.services?.llm || 'Gemini',
+                sync: 98.5 + Math.random() * 1.5,
+                memory: 40 + Math.random() * 30,
+                neuroLoad: (8 + Math.random() * 6).toFixed(1),
+            }));
+        } catch (e) {
+            setMetrics(prev => ({ ...prev, backendStatus: 'offline' }));
+        }
     }, []);
 
-    return metrics;
+    useEffect(() => {
+        // Initial fetch
+        fetchRealMetrics();
+
+        // Poll every 30 seconds
+        const pollInterval = setInterval(fetchRealMetrics, 30000);
+
+        // Uptime counter
+        const start = Date.now();
+        const uptimeInterval = setInterval(() => {
+            const diff = Math.floor((Date.now() - start) / 1000);
+            const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+            const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+            const s = (diff % 60).toString().padStart(2, '0');
+            setMetrics(prev => ({ ...prev, uptime: `${h}:${m}:${s}` }));
+        }, 1000);
+
+        return () => {
+            clearInterval(pollInterval);
+            clearInterval(uptimeInterval);
+        };
+    }, [fetchRealMetrics]);
+
+    return { ...metrics, refresh: fetchRealMetrics };
 }

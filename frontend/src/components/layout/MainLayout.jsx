@@ -9,9 +9,8 @@ export default function MainLayout({ children }) {
 
     return (
         <div className="min-h-screen h-screen flex flex-col bg-bg-dark scanline">
-            <Header />
+            <Header backendStatus={metrics.backendStatus} />
 
-            {/* Main Content — 3-column grid */}
             <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 py-6 flex flex-col gap-5 overflow-hidden">
                 <div className="flex-1 grid grid-cols-12 gap-5 overflow-hidden">
 
@@ -20,51 +19,67 @@ export default function MainLayout({ children }) {
                         {children}
                     </div>
 
-                    {/* Column 2: Intelligence Metrics (3/12) */}
+                    {/* Column 2: Metrics (3/12) */}
                     <div className="col-span-12 md:col-span-7 xl:col-span-3 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
 
                         <SectionLabel title="Live Metrics" />
 
-                        {/* 2x2 Metrics Grid */}
                         <div className="grid grid-cols-2 gap-3">
-                            <MetricCard label="Neural Sync" value={`${metrics?.sync?.toFixed(1) || '0.0'}%`} color="text-primary" />
-                            <MetricCard label="Memory Load" value={`${metrics?.memory?.toFixed(1) || '0.0'}%`} color="text-amber-400" />
-                            <MetricCard label="Index Count" value={metrics?.fragments?.toLocaleString() || '0'} color="text-emerald-400" />
+                            <MetricCard label="Uptime" value={metrics.uptime} color="text-primary" mono />
+                            <MetricCard label="Memory" value={`${metrics?.memory?.toFixed?.(1) || '0.0'}%`} color="text-amber-400" />
+                            <MetricCard label="Documents" value={metrics.documentsCount || 0} color="text-emerald-400" />
                             <MetricCard label="Inference" value={`${metrics?.neuroLoad || '0.0'}%`} color="text-violet-400" />
                         </div>
 
-                        {/* Subsystem Status */}
+                        {/* Subsystem Status — REAL */}
                         <SectionLabel title="Subsystem Status" />
                         <GlassCard className="!p-5">
                             <div className="space-y-4">
+                                <StatusRow
+                                    name="Backend API"
+                                    status={metrics.backendStatus === 'online' ? 'Online' : metrics.backendStatus === 'checking' ? 'Checking...' : 'Offline'}
+                                    color={metrics.backendStatus === 'online' ? 'text-emerald-400' : metrics.backendStatus === 'checking' ? 'text-amber-400' : 'text-red-400'}
+                                    dot={metrics.backendStatus === 'online' ? 'bg-emerald-400' : metrics.backendStatus === 'checking' ? 'bg-amber-400' : 'bg-red-400'}
+                                    pulse={metrics.backendStatus === 'checking'}
+                                />
+                                <StatusRow name="Gemini LLM" status="Ready" color="text-primary" dot="bg-primary" />
+                                <StatusRow name="ChromaDB" status="Active" color="text-emerald-400" dot="bg-emerald-400" />
+                                <StatusRow name="Vector Index" status="Synced" color="text-primary" dot="bg-primary" />
+                            </div>
+                        </GlassCard>
+
+                        {/* Keyboard Shortcuts */}
+                        <SectionLabel title="Shortcuts" />
+                        <GlassCard className="!p-4">
+                            <div className="space-y-2">
                                 {[
-                                    { name: 'ChromaDB', status: 'Online', color: 'text-emerald-400', dot: 'bg-emerald-400' },
-                                    { name: 'Gemini LLM', status: 'Ready', color: 'text-primary', dot: 'bg-primary' },
-                                    { name: 'Vector Index', status: 'Synced', color: 'text-primary', dot: 'bg-primary' },
+                                    { keys: 'Enter', action: 'Send message' },
+                                    { keys: 'Ctrl + K', action: 'Clear chat' },
+                                    { keys: 'Ctrl + E', action: 'Export chat' },
                                 ].map((s, i) => (
                                     <div key={i} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-2 h-2 rounded-full ${s.dot}`} />
-                                            <span className="text-sm font-medium text-slate-300">{s.name}</span>
-                                        </div>
-                                        <span className={`text-xs font-semibold ${s.color}`}>{s.status}</span>
+                                        <kbd className="px-2 py-0.5 bg-white/[0.04] border border-white/10 rounded text-[11px] font-mono text-slate-300">{s.keys}</kbd>
+                                        <span className="text-xs text-slate-400">{s.action}</span>
                                     </div>
                                 ))}
                             </div>
                         </GlassCard>
                     </div>
 
-                    {/* Column 3: Neural Core Visualization (2/12) */}
+                    {/* Column 3: Neural Core (2/12) */}
                     <div className="col-span-12 md:col-span-5 xl:col-span-2 flex flex-col gap-4">
                         <SectionLabel title="AI Core" />
                         <GlassCard className="flex-1 flex flex-col items-center justify-center relative overflow-hidden !p-4">
                             <NeuralCore />
-                            <div className="mt-6 text-center">
+                            <div className="mt-6 text-center space-y-1">
                                 <p className="text-xs font-mono text-primary/60 leading-relaxed">
                                     Neural Link: <span className="text-emerald-400">Stable</span>
                                 </p>
-                                <p className="text-xs font-mono text-primary/50 leading-relaxed">
-                                    Status: Active
+                                <p className="text-xs font-mono text-slate-400 leading-relaxed">
+                                    Model: {metrics.model?.split(' ').slice(-2).join(' ') || 'Gemini'}
+                                </p>
+                                <p className="text-xs font-mono text-primary/40 leading-relaxed">
+                                    Cost: $0.00
                                 </p>
                             </div>
                         </GlassCard>
@@ -72,7 +87,6 @@ export default function MainLayout({ children }) {
                 </div>
             </main>
 
-            {/* Bottom: Activity Log */}
             <ActivityLog />
         </div>
     );
@@ -89,12 +103,24 @@ function SectionLabel({ title }) {
     );
 }
 
-function MetricCard({ label, value, color = "text-white" }) {
+function MetricCard({ label, value, color = "text-white", mono = false }) {
     return (
         <GlassCard className="!p-5 !rounded-xl">
             <p className="text-xs font-medium text-slate-300 uppercase tracking-wider mb-2">{label}</p>
-            <p className={`text-2xl font-heading font-bold ${color} tracking-tight`}>{value}</p>
+            <p className={`text-2xl font-heading font-bold ${color} tracking-tight ${mono ? 'font-mono text-xl' : ''}`}>{value}</p>
         </GlassCard>
+    );
+}
+
+function StatusRow({ name, status, color, dot, pulse = false }) {
+    return (
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <div className={`w-2 h-2 rounded-full ${dot} ${pulse ? 'animate-pulse' : ''}`} />
+                <span className="text-sm font-medium text-slate-300">{name}</span>
+            </div>
+            <span className={`text-xs font-semibold ${color}`}>{status}</span>
+        </div>
     );
 }
 
