@@ -56,38 +56,40 @@ const AdminDashboard = () => {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#0c0e14] flex items-center justify-center">
+        <div className="min-h-screen bg-[#020408] flex items-center justify-center">
             <div className="relative">
-                <div className="animate-spin h-14 w-14 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full" />
-                <div className="absolute inset-0 bg-indigo-500 blur-2xl opacity-20" />
+                <div className="animate-spin h-10 w-10 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full" />
+                <div className="absolute inset-0 bg-indigo-500 blur-2xl opacity-10" />
             </div>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#0c0e14] text-gray-200 selection:bg-indigo-500/30 font-sans p-6 md:p-12 relative overflow-hidden">
-            {/* Background Effects */}
-            <div className="absolute top-0 left-0 w-full h-full -z-10 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 blur-[120px] rounded-full" />
+        <div className="min-h-screen bg-[#020408] text-gray-200 selection:bg-indigo-500/30 font-sans p-6 md:p-12 relative overflow-hidden">
+            <div className="grid-bg" />
+
+            {/* Background Glows */}
+            <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+                <div className="absolute top-[-5%] left-[-5%] w-[40%] h-[40%] bg-indigo-600/5 blur-[120px] rounded-full" />
             </div>
 
-            <div className="max-w-5xl mx-auto space-y-10 relative">
+            <div className="max-w-5xl mx-auto space-y-12 relative">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 animate-slide-up">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 animate-slide-up">
                     <div className="space-y-1">
-                        <h1 className="text-4xl font-bold tracking-tight text-white flex items-center gap-3">
-                            <span className="p-3 bg-white/5 rounded-2xl border border-white/10 shadow-inner">⚙️</span>
-                            Admin Control
+                        <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-4 uppercase">
+                            <span className="w-10 h-10 bg-white/[0.03] rounded-xl border border-white/5 flex items-center justify-center text-xl">⚙️</span>
+                            System Control
                         </h1>
-                        <p className="text-gray-500 font-medium tracking-wide pl-1">Knowledge Engine Management</p>
+                        <p className="text-gray-500 text-[10px] font-bold tracking-[0.3em] uppercase pl-1">Knowledge Engine Management</p>
                     </div>
-                    <Link to="/" className="px-8 py-3.5 bg-white text-black font-bold rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-white/5">
-                        ← Return to Interface
+                    <Link to="/" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shadow-lg shadow-indigo-600/20">
+                        ← Exit System
                     </Link>
                 </div>
 
                 {error && (
-                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-sm font-bold flex items-center gap-3 animate-slide-up">
+                    <div className="bg-red-500/5 border border-red-500/10 text-red-100 p-4 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 animate-slide-up">
                         <span>⚠️</span> {error}
                     </div>
                 )}
@@ -95,16 +97,16 @@ const AdminDashboard = () => {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
                     {[
-                        { label: 'Total Vectors', value: stats?.total_documents || 0, icon: '📊' },
-                        { label: 'Active Sources', value: sources.length, icon: '📁' },
+                        { label: 'Neural Vectors', value: stats?.total_documents || 0, icon: '📊' },
+                        { label: 'Active Fragments', value: sources.length, icon: '📁' },
                         { label: 'Compute Cost', value: '$0.00', icon: '💰' }
                     ].map((item, i) => (
                         <div key={i} className="glass p-8 rounded-[32px] border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 text-4xl opacity-10 group-hover:opacity-20 transition-opacity">
+                            <div className="absolute top-0 right-0 p-4 text-3xl opacity-5 group-hover:opacity-10 transition-opacity">
                                 {item.icon}
                             </div>
-                            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-2">{item.label}</p>
-                            <p className="text-4xl font-bold text-white tracking-tight">{item.value}</p>
+                            <p className="text-gray-600 text-[9px] font-black uppercase tracking-[0.2em] mb-4">{item.label}</p>
+                            <p className="text-4xl font-black text-white tracking-tight">{item.value}</p>
                         </div>
                     ))}
                 </div>
@@ -112,18 +114,17 @@ const AdminDashboard = () => {
                 {/* Tools Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-slide-up" style={{ animationDelay: '200ms' }}>
                     <div className="glass p-8 rounded-[32px] border border-white/5">
-                        <h3 className="text-xl font-bold mb-6 flex items-center gap-3 text-white">
-                            <span className="text-indigo-400">⚡</span>
-                            Core Operations
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-8 flex items-center gap-3 text-indigo-400">
+                            Core_Operations
                         </h3>
                         <div className="space-y-4">
-                            <button onClick={handleSeed} className="w-full flex items-center justify-between p-5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-2xl hover:bg-indigo-500/20 font-bold transition-all group">
-                                Seed Sample Dataset
-                                <span className="group-hover:translate-x-1 transition-transform">🌱</span>
+                            <button onClick={handleSeed} className="w-full flex items-center justify-between px-6 py-4 bg-indigo-500/5 border border-indigo-500/10 text-indigo-400 rounded-xl hover:bg-indigo-500/10 font-black text-[10px] uppercase tracking-widest transition-all">
+                                Seed_Sample_Dataset
+                                <span>🌱</span>
                             </button>
-                            <button onClick={fetchData} className="w-full flex items-center justify-between p-5 bg-white/5 border border-white/10 text-gray-300 rounded-2xl hover:bg-white/10 font-bold transition-all group">
-                                Refresh Engine Status
-                                <span className="group-hover:rotate-180 transition-transform duration-500">🔄</span>
+                            <button onClick={fetchData} className="w-full flex items-center justify-between px-6 py-4 bg-white/[0.02] border border-white/5 text-gray-500 hover:text-white rounded-xl hover:bg-white/[0.05] font-black text-[10px] uppercase tracking-widest transition-all">
+                                Sync_Engine_Status
+                                <span>🔄</span>
                             </button>
                         </div>
                     </div>
@@ -132,25 +133,24 @@ const AdminDashboard = () => {
 
                 {/* Knowledge Base */}
                 <div className="glass p-8 rounded-[32px] border border-white/5 animate-slide-up" style={{ animationDelay: '300ms' }}>
-                    <h3 className="text-xl font-bold mb-8 flex items-center gap-3 text-white">
-                        <span className="text-indigo-400">📚</span>
-                        Ingested Knowledge
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-8 text-indigo-400">
+                        Ingested_Knowledge_Base
                     </h3>
                     {sources.length === 0 ? (
-                        <div className="text-gray-500 text-center py-16 bg-white/[0.01] rounded-3xl border-2 border-dashed border-white/5 font-medium">
-                            No knowledge sources found. Start by uploading or seeding data.
+                        <div className="text-gray-600 text-center py-20 bg-white/[0.01] rounded-3xl border-2 border-dashed border-white/5 text-[10px] font-black uppercase tracking-widest">
+                            No knowledge fragments localized.
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {sources.map(s => (
-                                <div key={s} className="flex justify-between items-center bg-white/5 hover:bg-white/[0.08] rounded-2xl px-6 py-4 border border-white/5 transition-all group/item">
+                                <div key={s} className="flex justify-between items-center bg-white/[0.01] hover:bg-white/[0.03] rounded-xl px-5 py-4 border border-white/5 transition-all group/item">
                                     <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400">📄</div>
-                                        <span className="font-bold text-gray-200 truncate pr-4">{s}</span>
+                                        <div className="w-10 h-10 bg-indigo-500/5 rounded-lg flex items-center justify-center text-indigo-500 text-sm">📄</div>
+                                        <span className="font-bold text-xs text-gray-400 truncate pr-4">{s}</span>
                                     </div>
                                     <button
                                         onClick={() => handleDelete(s)}
-                                        className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-xl bg-red-400/5 border border-red-400/10 hover:border-red-400/20 transition-all opacity-0 group-hover/item:opacity-100"
+                                        className="text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-md bg-red-500/5 border border-red-500/10 hover:border-red-500/20 text-red-500/50 hover:text-red-500 transition-all opacity-0 group-hover/item:opacity-100"
                                     >
                                         Expunge
                                     </button>

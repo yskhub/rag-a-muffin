@@ -5,52 +5,52 @@ const MessageBubble = ({ message }) => {
     const [showSources, setShowSources] = useState(false);
 
     return (
-        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} gap-2 group/msg`}>
-            {/* Header Metadata */}
-            <div className="flex items-center gap-3 px-1">
-                <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${isUser ? 'order-2 text-indigo-400' : 'text-purple-400'}`}>
-                    {isUser ? 'Operator_Log' : 'Muffin_Pulse'}
+        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} gap-1.5 group/msg`}>
+            {/* Header / Meta */}
+            <div className="flex items-center gap-2 px-1">
+                <span className={`text-[8px] font-black uppercase tracking-widest ${isUser ? 'order-2 text-indigo-400' : 'text-indigo-400/60'}`}>
+                    {isUser ? 'USER_PROMPT' : 'SYSTEM_REPLY'}
                 </span>
-                <span className="text-[9px] font-mono text-gray-600 tabular-nums">
-                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                <span className="text-[8px] font-mono text-white/20 tabular-nums">
+                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
             </div>
 
-            {/* Bubble Content */}
+            {/* Content Plate */}
             <div className={`
-                relative px-6 py-4 transition-all duration-300 max-w-[85%]
+                relative px-5 py-3.5 transition-all duration-300 max-w-[90%] md:max-w-[75%]
                 ${isUser
-                    ? 'bg-indigo-600/10 border border-indigo-500/30 text-indigo-100 rounded-2xl rounded-tr-none'
-                    : 'glass text-gray-200 border-white/10 rounded-2xl rounded-tl-none hover:border-white/20'
+                    ? 'bg-indigo-600/10 border border-indigo-500/20 text-indigo-100/90 rounded-2xl rounded-tr-none'
+                    : 'glass text-gray-200 border-white/5 rounded-2xl rounded-tl-none hover:border-white/10'
                 }
             `}>
-                <div className="text-[13px] leading-relaxed font-medium whitespace-pre-wrap">
+                <div className="text-xs md:text-sm leading-relaxed whitespace-pre-wrap font-medium">
                     {message.content}
                 </div>
 
                 {!isUser && message.sources && message.sources.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-white/5">
+                    <div className="mt-4 pt-3 border-t border-white/5">
                         <button
                             onClick={() => setShowSources(!showSources)}
-                            className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:text-indigo-400 transition-colors"
+                            className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-indigo-400/50 hover:text-indigo-400 transition-colors"
                         >
-                            <span>{showSources ? '▼' : '▶'}</span>
-                            KNOWLEDGE_FRAGMENTS ({message.sources.length})
+                            <span className="text-[10px]">{showSources ? '−' : '+'}</span>
+                            Context_Fragments
                         </button>
 
                         {showSources && (
-                            <div className="mt-4 space-y-2 animate-slide-up">
+                            <div className="mt-3 space-y-2 animate-slide-up">
                                 {message.sources.map((source, i) => (
-                                    <div key={i} className="p-3 bg-white/[0.02] border border-white/5 rounded-lg group/source hover:bg-white/[0.04] transition-all">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <span className="text-[10px] font-mono font-bold text-indigo-400/80 truncate pr-4 uppercase">
-                                                {source.filename || `node_pk_${i}`}
+                                    <div key={i} className="p-3 bg-white/[0.01] border border-white/5 rounded-xl hover:bg-white/[0.02] transition-all">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-[9px] font-mono font-bold text-indigo-400/80 uppercase truncate pr-4">
+                                                {source.filename || `node_${i}`}
                                             </span>
-                                            <span className="text-[8px] font-mono text-gray-600 bg-white/5 px-1.5 py-0.5 rounded">
-                                                SCORE: {(source.score * 100).toFixed(1)}%
+                                            <span className="text-[7px] font-mono text-white/20 bg-white/5 px-1 rounded uppercase">
+                                                Lnk: {(source.score * 100).toFixed(0)}%
                                             </span>
                                         </div>
-                                        <p className="text-[11px] text-gray-500 italic leading-relaxed line-clamp-2 italic">
+                                        <p className="text-[10px] text-gray-500 leading-relaxed italic line-clamp-2">
                                             "{source.content}"
                                         </p>
                                     </div>
@@ -61,23 +61,17 @@ const MessageBubble = ({ message }) => {
                 )}
             </div>
 
-            {/* Quick Actions */}
-            <div className={`
-                flex items-center gap-4 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-300 px-1
-                ${isUser ? 'flex-row-reverse' : ''}
-            `}>
-                {!isUser && (
+            {/* Footer Actions */}
+            {!isUser && (
+                <div className="px-2 opacity-0 group-hover/msg:opacity-100 transition-opacity">
                     <button
-                        onClick={() => {
-                            navigator.clipboard.writeText(message.content);
-                        }}
-                        className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600 hover:text-white transition-colors"
+                        onClick={() => navigator.clipboard.writeText(message.content)}
+                        className="text-[8px] font-black text-white/30 hover:text-white uppercase tracking-widest transition-colors"
                     >
-                        Copy
+                        Copy_Log
                     </button>
-                )}
-                {isUser && <span className="text-indigo-500 text-[10px]">SYNC_COMPLETE</span>}
-            </div>
+                </div>
+            )}
         </div>
     );
 };

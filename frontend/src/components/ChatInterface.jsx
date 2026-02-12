@@ -21,10 +21,9 @@ const ChatInterface = () => {
     useEffect(() => {
         if (isLoading) {
             const statusMessages = [
-                'UPLOADING SECURE PACKETS...',
-                'SCANNING KNOWLEDGE NODES...',
-                'RETRIEVING NEURAL CONTEXT...',
-                'SYNTHESIZING RESPONSE...',
+                'SCANNING DOCUMENTS...',
+                'RETRIEVING CONTEXT...',
+                'SYNTHESIZING ANSWER...',
                 'FINALIZING OUTPUT...'
             ];
             let i = 0;
@@ -44,78 +43,81 @@ const ChatInterface = () => {
     };
 
     return (
-        <div className="relative flex flex-col h-screen overflow-hidden font-sans selection:bg-indigo-500/30 scanline">
-            {/* Background Layers */}
-            <div className="absolute inset-0 -z-10 bg-[#07090e]">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 blur-[130px] rounded-full" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full" />
+        <div className="relative flex flex-col h-screen overflow-hidden font-sans selection:bg-indigo-500/30 scanline bg-[#020408]">
+            <div className="grid-bg" />
+
+            {/* Background Glows */}
+            <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+                <div className="absolute top-[-5%] left-[-5%] w-[30%] h-[30%] bg-indigo-600/10 blur-[100px] rounded-full" />
+                <div className="absolute bottom-[10%] right-[-5%] w-[25%] h-[25%] bg-purple-600/10 blur-[90px] rounded-full" />
             </div>
 
-            {/* Header / System Bar */}
-            <header className="glass-dark sticky top-0 z-50 px-8 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                    <div className="relative group cursor-pointer">
-                        <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-3xl shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+            {/* Header */}
+            <header className="glass-header sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div className="relative">
+                        <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-xl shadow-lg shadow-indigo-500/20">
                             🤖
                         </div>
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-4 border-[#07090e] rounded-full animate-pulse" />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-[#04060c] rounded-full animate-pulse" />
                     </div>
                     <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                            <h1 className="text-2xl font-black text-white tracking-tight uppercase">
-                                MUFFIN.<span className="text-indigo-500">OS</span>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-lg font-black text-white tracking-tight uppercase">
+                                MUFFIN.<span className="text-indigo-400">OS</span>
                             </h1>
-                            <span className="text-[10px] font-bold bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/30 uppercase tracking-widest">v2.0.4</span>
+                            <span className="text-[9px] font-bold bg-indigo-500/10 text-indigo-400/80 px-1.5 py-0.5 rounded border border-indigo-500/20 tracking-tighter">v2.0.4</span>
                         </div>
-                        <p className="text-[10px] font-bold text-gray-500 tracking-[0.3em] uppercase">
-                            Advanced RAG Intelligence Unit
+                        <p className="text-[9px] font-bold text-gray-500 tracking-[0.2em] uppercase leading-none mt-1">
+                            RAG Intelligence Unit
                         </p>
                     </div>
                 </div>
 
-                <div className="hidden lg:flex flex-col items-end gap-1 px-6 border-r border-white/5 mr-6">
-                    <span className="text-[10px] font-black text-indigo-400 tracking-widest uppercase">System Chronos</span>
-                    <span className="text-sm font-mono text-white/80 tabular-nums">{systemTime}</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={clearMessages}
-                        className="hidden md:flex items-center gap-2 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-all"
-                    >
-                        NEW_SESSION
-                    </button>
-                    <button
-                        onClick={clearMessages}
-                        className="p-3 text-gray-500 hover:text-red-400 hover:bg-red-400/5 rounded-lg transition-all group"
-                        title="Purge Logs"
-                    >
-                        <span className="group-hover:scale-110 block transition-transform">❌</span>
-                    </button>
+                <div className="flex items-center gap-4">
+                    <div className="hidden sm:flex flex-col items-end pr-4 border-r border-white/5">
+                        <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Chronos</span>
+                        <span className="text-xs font-mono text-white/50 tabular-nums">{systemTime}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={clearMessages}
+                            className="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/20 rounded-md transition-all"
+                        >
+                            + New Session
+                        </button>
+                        <button
+                            onClick={clearMessages}
+                            className="p-2 text-gray-500 hover:text-red-400 transition-all"
+                            title="Clear History"
+                        >
+                            🗑️
+                        </button>
+                    </div>
                 </div>
             </header>
 
-            {/* Terminal Feed */}
-            <main className="flex-1 overflow-y-auto px-8 py-10 space-y-8 scroll-smooth scrollbar-none">
+            {/* Chat Body */}
+            <main className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
                 {messages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center min-h-[65vh] text-center animate-slide-up">
-                        <div className="relative mb-12">
-                            <div className="w-40 h-40 bg-indigo-500/5 rounded-[40px] border border-indigo-500/10 flex items-center justify-center text-8xl animate-float cyber-border">
+                    <div className="flex flex-col items-center justify-center min-h-[50vh] text-center animate-slide-up py-12">
+                        <div className="relative mb-6">
+                            <div className="w-24 h-24 bg-white/[0.02] rounded-[32px] border border-white/5 flex items-center justify-center text-5xl animate-float">
                                 👋
                             </div>
-                            <div className="absolute inset-0 bg-indigo-500/10 blur-[80px] rounded-full -z-10" />
+                            <div className="absolute inset-0 bg-indigo-500/5 blur-[40px] rounded-full -z-10" />
                         </div>
-                        <h2 className="text-5xl font-black text-white mb-6 tracking-tighter">INIT_CONVERSATION_LOOP</h2>
-                        <p className="text-gray-500 max-w-lg mx-auto text-sm font-medium leading-relaxed tracking-wide">
-                            Neural knowledge base synchronized. Deploying conversational parameters. Standing by for user instruction packets.
+                        <h2 className="text-3xl font-black text-white mb-4 tracking-tight uppercase">Init_System_Loop</h2>
+                        <p className="text-gray-500 max-w-sm mx-auto text-xs font-medium leading-relaxed tracking-wide">
+                            Knowledge base synchronized. Deploying conversational parameters. Standing by for instructions.
                         </p>
 
-                        <div className="flex flex-wrap justify-center gap-4 mt-12 max-w-2xl">
-                            {['Check return policy', 'Compare headphones', 'Shipping rates', 'New arrivals'].map(tag => (
+                        <div className="grid grid-cols-2 gap-3 mt-8 max-w-sm w-full">
+                            {['Check return policy', 'Compare products', 'Shipping rates', 'New arrivals'].map(tag => (
                                 <button
                                     key={tag}
                                     onClick={() => setInput(tag)}
-                                    className="px-6 py-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-indigo-500/10 hover:border-indigo-500/30 text-gray-400 hover:text-indigo-400 text-xs font-black uppercase tracking-widest transition-all glow-pulse"
+                                    className="px-4 py-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/10 text-gray-400 text-[10px] font-black uppercase tracking-widest transition-all text-left"
                                 >
                                     {tag} [→]
                                 </button>
@@ -124,68 +126,68 @@ const ChatInterface = () => {
                     </div>
                 )}
 
-                {messages.map(msg => (
-                    <div key={msg.id} className="animate-slide-up">
-                        <MessageBubble message={msg} />
-                    </div>
-                ))}
+                <div className="max-w-4xl mx-auto space-y-8 w-full">
+                    {messages.map(msg => (
+                        <div key={msg.id} className="animate-slide-up">
+                            <MessageBubble message={msg} />
+                        </div>
+                    ))}
 
-                {isLoading && (
-                    <div className="flex justify-start animate-slide-up">
-                        <div className="glass px-8 py-6 rounded-2xl border-indigo-500/20 max-w-sm">
-                            <div className="flex flex-col gap-4">
-                                <div className="flex gap-2 items-center">
-                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping" />
-                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping" style={{ animationDelay: '0.2s' }} />
-                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping" style={{ animationDelay: '0.4s' }} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-indigo-400 tracking-[0.3em] uppercase mb-1">Processing...</p>
-                                    <p className="text-xs font-mono text-gray-400">{loadingMessage}</p>
+                    {isLoading && (
+                        <div className="flex justify-start animate-slide-up">
+                            <div className="glass px-6 py-4 rounded-2xl border-indigo-500/10 max-w-xs">
+                                <div className="flex gap-4 items-center">
+                                    <div className="flex gap-1">
+                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                                    </div>
+                                    <p className="text-[10px] font-mono text-indigo-400/80 tracking-tighter uppercase">{loadingMessage}</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
 
                 {error && (
-                    <div className="mx-auto max-w-max bg-red-500/5 border border-red-500/20 text-red-400 px-8 py-4 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-3 animate-slide-up">
-                        <span className="p-1 bg-red-500/20 rounded">ERR</span> {error}
+                    <div className="mx-auto max-w-max bg-red-500/5 border border-red-500/10 text-red-400 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 animate-slide-up">
+                        <span>⚠️</span> {error}
                     </div>
                 )}
                 <div ref={messagesEndRef} />
             </main>
 
-            {/* Input Terminal */}
-            <footer className="px-8 pb-8 pt-4">
-                <div className="max-w-5xl mx-auto relative group">
-                    <div className="absolute -top-12 left-0 right-0 flex justify-between px-2 opacity-0 group-focus-within:opacity-100 transition-opacity">
-                        <span className="text-[9px] font-black text-indigo-500/50 uppercase tracking-[0.2em]">Input Active</span>
-                        <span className="text-[9px] font-black text-indigo-500/50 uppercase tracking-[0.2em]">Ready to Receive</span>
-                    </div>
-                    <div className="relative glass p-2.5 rounded-2xl flex gap-3 border-indigo-500/20 group-focus-within:border-indigo-500/50 transition-colors">
-                        <div className="hidden md:flex items-center pl-4 pr-1 text-indigo-500/50 font-mono font-bold text-lg select-none">
-                            &gt;_
+            {/* Input Bar */}
+            <footer className="p-6 bg-gradient-to-t from-[#020408] to-transparent">
+                <div className="max-w-3xl mx-auto">
+                    <div className="relative glass rounded-2xl p-1.5 flex items-center gap-2 group transition-all duration-300 focus-within:border-indigo-500/30">
+                        <div className="pl-4 text-indigo-500/40 font-mono font-bold select-none text-sm">
+                            &gt;
                         </div>
                         <input
                             type="text"
                             value={input}
                             onChange={e => setInput(e.target.value)}
                             onKeyPress={e => e.key === 'Enter' && handleSend()}
-                            placeholder="INITIALIZE INPUT PACKET..."
+                            placeholder="Awaiting instruction packet..."
                             disabled={isLoading}
-                            className="flex-1 bg-transparent px-4 py-3 text-white placeholder-gray-700 font-mono text-sm focus:outline-none"
+                            className="flex-1 bg-transparent px-2 py-3 text-white placeholder-gray-700 text-sm focus:outline-none"
                         />
                         <button
                             onClick={handleSend}
                             disabled={!input.trim() || isLoading}
-                            className={`px-10 py-3 rounded-xl font-black uppercase tracking-[0.2em] transition-all duration-300 text-xs ${!input.trim() || isLoading
-                                    ? 'bg-white/5 text-gray-700'
-                                    : 'bg-indigo-600 text-white hover:bg-indigo-500 hover:scale-[1.02] active:scale-95 glow-pulse'
+                            className={`px-6 py-2.5 rounded-xl font-black uppercase tracking-widest transition-all duration-300 text-[10px] ${!input.trim() || isLoading
+                                    ? 'bg-white/5 text-gray-600'
+                                    : 'bg-indigo-600 text-white hover:bg-indigo-500 glow-pulse'
                                 }`}
                         >
-                            {isLoading ? '---' : 'DEPLOY'}
+                            {isLoading ? '...' : 'Deploy'}
                         </button>
+                    </div>
+                    <div className="mt-4 flex justify-center items-center gap-4">
+                        <span className="text-[8px] font-black text-white/10 uppercase tracking-[0.5em]">Quantum Search Active</span>
+                        <div className="h-px w-8 bg-white/5" />
+                        <span className="text-[8px] font-black text-white/10 uppercase tracking-[0.5em]">Neural Link Stable</span>
                     </div>
                 </div>
             </footer>

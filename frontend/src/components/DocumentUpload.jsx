@@ -9,11 +9,11 @@ const DocumentUpload = ({ onUploadComplete }) => {
 
     const handleFile = async (file) => {
         if (!file.name.endsWith('.pdf')) {
-            setMessage({ type: 'error', text: 'Only PDF files supported' });
+            setMessage({ type: 'error', text: 'ERR: PDF_REQUIRED' });
             return;
         }
         if (file.size > 10 * 1024 * 1024) {
-            setMessage({ type: 'error', text: 'Size exceeds 10MB limit' });
+            setMessage({ type: 'error', text: 'ERR: OVER_LIMIT [10MB]' });
             return;
         }
 
@@ -22,10 +22,10 @@ const DocumentUpload = ({ onUploadComplete }) => {
         setMessage(null);
         try {
             const result = await documentsApi.uploadDocument(file, (p) => setProgress(p));
-            setMessage({ type: 'success', text: `Successfully indexed: ${result.filename}` });
+            setMessage({ type: 'success', text: `SUCCESS: ${result.filename} INDEXED` });
             onUploadComplete?.();
         } catch (e) {
-            setMessage({ type: 'error', text: 'Knowledge extraction failed' });
+            setMessage({ type: 'error', text: 'ERR: EXTRACTION_FAILED' });
         } finally {
             setUploading(false);
         }
@@ -33,18 +33,17 @@ const DocumentUpload = ({ onUploadComplete }) => {
 
     return (
         <div className="glass p-8 rounded-[32px] border border-white/5 relative overflow-hidden group">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-3 text-white">
-                <span className="text-indigo-400">📥</span>
-                Knowledge Intake
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-8 text-indigo-400">
+                Knowledge_Intake
             </h3>
 
             <div
                 onClick={() => !uploading && fileRef.current?.click()}
                 className={`
-                    border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300
+                    border border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300
                     ${uploading
                         ? 'border-indigo-500/10 cursor-not-allowed opacity-50'
-                        : 'border-white/5 hover:border-indigo-500/30 hover:bg-indigo-500/[0.02] group-hover:scale-[0.99]'
+                        : 'border-white/10 hover:border-indigo-500/40 hover:bg-white/[0.01]'
                     }
                 `}
             >
@@ -56,32 +55,25 @@ const DocumentUpload = ({ onUploadComplete }) => {
                     className="hidden"
                 />
 
-                <div className="relative inline-block mb-4">
-                    <div className="text-5xl group-hover:scale-110 transition-transform duration-300">📄</div>
-                    {uploading && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-12 h-12 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                        </div>
-                    )}
-                </div>
+                <div className="text-4xl mb-6 opacity-30 group-hover:opacity-100 transition-opacity">📥</div>
 
-                <p className="text-gray-300 font-bold mb-1">
-                    {uploading ? 'Processing Knowledge...' : 'Deploy PDF Source'}
+                <p className="text-white text-[10px] font-black uppercase tracking-widest mb-2">
+                    {uploading ? 'Processing_Packet...' : 'Deploy_Source_File'}
                 </p>
-                <p className="text-gray-500 text-xs font-medium uppercase tracking-widest">
-                    MAX 10MB &bull; 100% SECURE
+                <p className="text-gray-600 text-[8px] font-black uppercase tracking-widest">
+                    PDF Only &bull; 10MB Max
                 </p>
             </div>
 
             {uploading && (
-                <div className="mt-6 space-y-2 animate-slide-up">
-                    <div className="flex justify-between text-[10px] uppercase tracking-widest font-bold text-indigo-400">
-                        <span>Ingestion Progress</span>
+                <div className="mt-8 space-y-3 animate-slide-up">
+                    <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-indigo-400">
+                        <span>Ingestion_Progress</span>
                         <span>{progress}%</span>
                     </div>
-                    <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
                         <div
-                            className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full transition-all duration-300"
+                            className="bg-indigo-500 h-full transition-all duration-300"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
@@ -89,11 +81,11 @@ const DocumentUpload = ({ onUploadComplete }) => {
             )}
 
             {message && (
-                <div className={`mt-6 p-4 rounded-2xl text-xs font-bold flex items-center gap-3 animate-slide-up ${message.type === 'success'
-                        ? 'bg-green-500/10 border border-green-500/20 text-green-400'
-                        : 'bg-red-500/10 border border-red-500/20 text-red-400'
+                <div className={`mt-8 p-4 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-3 animate-slide-up ${message.type === 'success'
+                        ? 'bg-green-500/5 border border-green-500/10 text-green-400/80'
+                        : 'bg-red-500/5 border border-red-500/10 text-red-400/80'
                     }`}>
-                    <span>{message.type === 'success' ? '✅' : '❌'}</span>
+                    <span>{message.type === 'success' ? '✔' : '✘'}</span>
                     {message.text}
                 </div>
             )}
