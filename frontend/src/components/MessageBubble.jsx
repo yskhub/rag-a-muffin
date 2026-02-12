@@ -46,11 +46,22 @@ const MessageBubble = ({ message }) => {
                     )}
                 </div>
 
-                {/* Timestamp */}
+                {/* Actions & Timestamp */}
                 <div className={`
-                    text-[10px] font-medium tracking-wide flex items-center gap-2 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-300
+                    text-[10px] font-medium tracking-wide flex items-center gap-3 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-300 mt-1
                     ${isUser ? 'justify-end text-gray-500' : 'justify-start text-gray-500'}
                 `}>
+                    {!isUser && (
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(message.content);
+                                // Optional: add a temporary 'Copied!' state here
+                            }}
+                            className="hover:text-indigo-400 transition-colors uppercase tracking-widest font-bold"
+                        >
+                            Copy
+                        </button>
+                    )}
                     <span>{new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     {isUser && <span className="text-indigo-500">✓</span>}
                 </div>

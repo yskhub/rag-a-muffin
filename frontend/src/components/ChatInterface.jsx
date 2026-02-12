@@ -6,10 +6,28 @@ const ChatInterface = () => {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef(null);
     const { messages, isLoading, error, sendMessage, clearMessages } = useChatStore();
+    const [loadingMessage, setLoadingMessage] = useState('Consulting knowledge base...');
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    useEffect(() => {
+        if (isLoading) {
+            const statusMessages = [
+                'Scanning documents...',
+                'Retrieving context...',
+                'Synthesizing answer...',
+                'Finalizing response...'
+            ];
+            let i = 0;
+            const interval = setInterval(() => {
+                i = (i + 1) % statusMessages.length;
+                setLoadingMessage(statusMessages[i]);
+            }, 1500);
+            return () => clearInterval(interval);
+        }
+    }, [isLoading]);
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
@@ -99,10 +117,15 @@ const ChatInterface = () => {
                 {isLoading && (
                     <div className="flex justify-start animate-slide-up">
                         <div className="glass px-6 py-4 rounded-2xl border-indigo-500/20">
-                            <div className="flex gap-1.5 items-center">
-                                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '200ms' }} />
-                                <div className="w-2 h-2 bg-indigo-300 rounded-full animate-bounce" style={{ animationDelay: '400ms' }} />
+                            <div className="flex flex-col gap-2">
+                                <div className="flex gap-1.5 items-center">
+                                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '200ms' }} />
+                                    <div className="w-2 h-2 bg-indigo-300 rounded-full animate-bounce" style={{ animationDelay: '400ms' }} />
+                                </div>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-400 animate-pulse">
+                                    {loadingMessage}
+                                </p>
                             </div>
                         </div>
                     </div>
