@@ -16,17 +16,17 @@ export default function Header() {
     const formattedDate = time.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 
     return (
-        <header className="h-16 border-b border-white/[0.06] bg-slate-950/60 backdrop-blur-2xl flex items-center justify-between px-8 z-50">
+        <header className="h-16 border-b border-white/[0.08] bg-slate-950/60 backdrop-blur-2xl flex items-center justify-between px-8 z-50">
             {/* Left: Brand */}
             <div className="flex items-center gap-4">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center animate-pulse-glow">
-                    <span className="text-primary text-sm font-bold">◆</span>
+                <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center animate-pulse-glow">
+                    <span className="text-primary text-base font-bold">◆</span>
                 </div>
                 <div>
-                    <h1 className="font-heading text-base font-semibold text-white tracking-wide">
+                    <h1 className="font-heading text-lg font-semibold text-white tracking-wide">
                         AI Context Engine
                     </h1>
-                    <p className="text-[10px] font-mono text-slate-500 tracking-wider">
+                    <p className="text-xs font-mono text-slate-400 tracking-wider">
                         Muffin.OS · v2.1.0
                     </p>
                 </div>
@@ -36,29 +36,29 @@ export default function Header() {
             <div className="hidden lg:flex items-center gap-6">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/5 border border-green-500/10">
                     <StatusDot status="active" />
-                    <span className="text-[10px] font-medium text-green-400/80">System Online</span>
+                    <span className="text-xs font-medium text-green-400/80">System Online</span>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 border border-primary/10">
                     <StatusDot status="cyan" />
-                    <span className="text-[10px] font-medium text-primary/70">RAG Pipeline Active</span>
+                    <span className="text-xs font-medium text-primary/70">RAG Pipeline Active</span>
                 </div>
             </div>
 
             {/* Right: Clock + Actions */}
             <div className="flex items-center gap-5">
                 <div className="hidden md:flex flex-col items-end">
-                    <span className="text-sm font-mono text-white/50 tabular-nums">{formattedTime}</span>
-                    <span className="text-[9px] font-mono text-slate-600 uppercase">{formattedDate}</span>
+                    <span className="text-sm font-mono text-white/60 tabular-nums">{formattedTime}</span>
+                    <span className="text-[10px] font-mono text-slate-500 uppercase">{formattedDate}</span>
                 </div>
-                <div className="w-px h-8 bg-white/[0.06]" />
+                <div className="w-px h-8 bg-white/[0.08]" />
                 <button
                     onClick={clearMessages}
-                    className="text-[10px] font-medium text-slate-500 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-red-400/5"
+                    className="text-xs font-medium text-slate-400 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-red-400/5"
                     title="Clear chat history"
                 >
                     Clear
                 </button>
-                <Link to="/admin" className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
+                <Link to="/admin" className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.08] transition-all">
                     <span className="text-sm">⚙</span>
                 </Link>
             </div>

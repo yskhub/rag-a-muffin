@@ -23,7 +23,6 @@ export default function MainLayout({ children }) {
                     {/* Column 2: Intelligence Metrics (3/12) */}
                     <div className="col-span-12 md:col-span-7 xl:col-span-3 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
 
-                        {/* Section Header */}
                         <SectionLabel title="Live Metrics" />
 
                         {/* 2x2 Metrics Grid */}
@@ -36,19 +35,19 @@ export default function MainLayout({ children }) {
 
                         {/* Subsystem Status */}
                         <SectionLabel title="Subsystem Status" />
-                        <GlassCard className="!p-4">
-                            <div className="space-y-3">
+                        <GlassCard className="!p-5">
+                            <div className="space-y-4">
                                 {[
                                     { name: 'ChromaDB', status: 'Online', color: 'text-emerald-400', dot: 'bg-emerald-400' },
                                     { name: 'Gemini LLM', status: 'Ready', color: 'text-primary', dot: 'bg-primary' },
                                     { name: 'Vector Index', status: 'Synced', color: 'text-primary', dot: 'bg-primary' },
                                 ].map((s, i) => (
                                     <div key={i} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                                            <span className="text-[11px] font-medium text-slate-400">{s.name}</span>
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-2 h-2 rounded-full ${s.dot}`} />
+                                            <span className="text-sm font-medium text-slate-300">{s.name}</span>
                                         </div>
-                                        <span className={`text-[10px] font-semibold ${s.color}`}>{s.status}</span>
+                                        <span className={`text-xs font-semibold ${s.color}`}>{s.status}</span>
                                     </div>
                                 ))}
                             </div>
@@ -61,10 +60,10 @@ export default function MainLayout({ children }) {
                         <GlassCard className="flex-1 flex flex-col items-center justify-center relative overflow-hidden !p-4">
                             <NeuralCore />
                             <div className="mt-6 text-center">
-                                <p className="text-[10px] font-mono text-primary/40 leading-relaxed">
+                                <p className="text-xs font-mono text-primary/60 leading-relaxed">
                                     Neural Link: <span className="text-emerald-400">Stable</span>
                                 </p>
-                                <p className="text-[10px] font-mono text-primary/30 leading-relaxed">
+                                <p className="text-xs font-mono text-primary/50 leading-relaxed">
                                     Status: Active
                                 </p>
                             </div>
@@ -84,17 +83,17 @@ export default function MainLayout({ children }) {
 function SectionLabel({ title }) {
     return (
         <div className="flex items-center gap-3 px-1">
-            <div className="h-px w-4 bg-primary/20" />
-            <h3 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">{title}</h3>
+            <div className="h-px w-4 bg-primary/30" />
+            <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-300">{title}</h3>
         </div>
     );
 }
 
 function MetricCard({ label, value, color = "text-white" }) {
     return (
-        <GlassCard className="!p-4 !rounded-xl">
-            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-2">{label}</p>
-            <p className={`text-xl font-heading font-bold ${color} tracking-tight`}>{value}</p>
+        <GlassCard className="!p-5 !rounded-xl">
+            <p className="text-xs font-medium text-slate-300 uppercase tracking-wider mb-2">{label}</p>
+            <p className={`text-2xl font-heading font-bold ${color} tracking-tight`}>{value}</p>
         </GlassCard>
     );
 }
@@ -124,16 +123,16 @@ function ActivityLog() {
     }, []);
 
     return (
-        <div className="h-28 bg-black/30 border-t border-white/[0.04] px-8 py-3 font-mono text-[10px] overflow-hidden relative">
+        <div className="h-28 bg-black/30 border-t border-white/[0.06] px-8 py-3 font-mono text-xs overflow-hidden relative">
             <div className="absolute top-2.5 right-8 flex items-center gap-3">
-                <span className="text-[9px] font-medium text-slate-600 uppercase tracking-widest">Activity Log</span>
+                <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">Activity Log</span>
                 <div className="w-1.5 h-1.5 bg-primary/30 rounded-full animate-pulse" />
             </div>
-            <div className="h-full overflow-y-auto custom-scrollbar flex flex-col gap-0.5 pr-32">
+            <div className="h-full overflow-y-auto custom-scrollbar flex flex-col gap-1 pr-32">
                 {logs.map((l, i) => (
-                    <div key={i} className={`flex gap-3 ${i === 0 ? 'opacity-70' : 'opacity-30'} hover:opacity-100 transition-opacity`}>
-                        <span className="text-slate-600 tabular-nums">{l.t}</span>
-                        <span className={`font-medium ${l.type === 'success' ? 'text-emerald-500/60' : 'text-slate-500'}`}>{l.m}</span>
+                    <div key={i} className={`flex gap-3 ${i === 0 ? 'opacity-80' : 'opacity-40'} hover:opacity-100 transition-opacity`}>
+                        <span className="text-slate-500 tabular-nums">{l.t}</span>
+                        <span className={`font-medium ${l.type === 'success' ? 'text-emerald-400/70' : 'text-slate-400'}`}>{l.m}</span>
                     </div>
                 ))}
             </div>
