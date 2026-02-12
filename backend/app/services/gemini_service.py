@@ -24,21 +24,27 @@ class GeminiService:
     def __init__(self):
         # Get API key from environment
         api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            # Fallback for initialization during setup if key isn't set yet
-            print("⚠️ GOOGLE_API_KEY not found in environment. Service will require it to function.")
-            api_key = "PLACEHOLDER"
+        if not api_key or api_key == "PLACEHOLDER":
+            print("⚠️ GOOGLE_API_KEY not found or is PLACEHOLDER. Gemini will NOT work.")
+            self.model = None
+            self.request_times: deque = deque(maxlen=15)
+            return
         
         # Configure Gemini
         genai.configure(api_key=api_key)
         
-        # Use Gemini 1.5 Flash (fastest free model)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        # Try gemini-2.0-flash first (latest), fall back to 1.5-flash
+        try:
+            self.model = genai.GenerativeModel('gemini-2.0-flash')
+            # Quick test to see if model is accessible
+            print("✅ Google Gemini 2.0 Flash initialized (FREE)")
+        except Exception as e:
+            print(f"⚠️ gemini-2.0-flash unavailable ({e}), falling back to gemini-1.5-flash")
+            self.model = genai.GenerativeModel('gemini-1.5-flash')
+            print("✅ Google Gemini 1.5 Flash initialized (FREE - 15 RPM)")
         
         # Rate limiter: track last 15 requests
         self.request_times: deque = deque(maxlen=15)
-        
-        print("✅ Google Gemini initialized (100% FREE - 15 RPM)")
     
     async def _check_rate_limit(self):
         """
@@ -68,46 +74,43 @@ class GeminiService:
         Generate response using Gemini
         Includes automatic rate limiting and retries for free tier
         """
+        if self.model is None:
+            return "AI engine is not configured. Please set the GOOGLE_API_KEY environment variable on the server."
+        
+        import asyncio
         max_retries = 3
-        retry_delay = 2 # Seconds
+        retry_delay = 5  # Start with 5 seconds
         
         for attempt in range(max_retries):
             # Check rate limit before making request
             await self._check_rate_limit()
             
             try:
-                # generate_content is synchronous in the SDK normally, but we wrap it
-                import asyncio
-                loop = asyncio.get_event_loop()
-                response = await loop.run_in_executor(None, lambda: self.model.generate_content(prompt))
+                response = await asyncio.get_event_loop().run_in_executor(
+                    None, lambda: self.model.generate_content(prompt)
+                )
                 return response.text
             
             except Exception as e:
                 error_msg = str(e)
                 print(f"❌ Gemini API Error (Attempt {attempt+1}/{max_retries}): {error_msg}")
                 
-                # If it's a rate limit error, wait and retry
-                if "rate" in error_msg.lower() or "429" in error_msg:
+                # Rate limit or resource exhausted
+                if any(kw in error_msg.lower() for kw in ["rate", "429", "resource", "exhausted", "quota"]):
                     if attempt < max_retries - 1:
                         wait_time = retry_delay * (attempt + 1)
-                        print(f"⏳ External Rate Limit (Google). Retrying in {wait_time}s...")
-                        import asyncio
+                        print(f"⏳ Rate limited by Google. Waiting {wait_time}s before retry...")
                         await asyncio.sleep(wait_time)
                         continue
-                    return f"Google Gemini is currently rate-limited (Attempt {attempt+1}). Please wait a minute."
+                    return "The AI engine is temporarily rate-limited by Google. Please wait 60 seconds and try again."
                 
-                # If it's a quota error, return immediately
-                if "quota" in error_msg.lower():
-                    return "I've reached my daily limit. Please try again tomorrow!"
-                
-                # Other errors
+                # Other errors - retry with backoff
                 if attempt < max_retries - 1:
-                    import asyncio
                     await asyncio.sleep(retry_delay)
                     continue
-                return "I'm having trouble responding right now. Please try again."
+                return f"AI engine error: {error_msg[:100]}. Please try again."
         
-        return "System timeout. Please try again."
+        return "System timeout after multiple retries. Please try again in a minute."
     
     async def generate_with_context(
         self, 
@@ -153,8 +156,9 @@ ANSWER:"""
     def get_stats(self) -> Dict:
         """Get service statistics"""
         return {
-            "model": "gemini-1.5-flash",
+            "model": "gemini-2.0-flash" if self.model else "NOT_CONFIGURED",
             "requests_last_minute": len(self.request_times),
             "rate_limit": "15 RPM (FREE)",
-            "cost": "$0.00"
+            "cost": "$0.00",
+            "status": "ready" if self.model else "no_api_key"
         }
