@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     
     # Application
     ENVIRONMENT: str = "development"
-    ALLOWED_ORIGINS: str = "http://localhost:5173"
+    ALLOWED_ORIGINS: str = "*"
     
     class Config:
         env_file = ".env"

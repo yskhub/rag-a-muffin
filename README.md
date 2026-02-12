@@ -3,6 +3,7 @@
 RAG-powered customer support chatbot using Google Gemini and ChromaDB.
 
 ## 💰 Total Cost: $0.00
+All components used are selected based on their robust free tiers.
 
 | Component | Service | Cost |
 |-----------|---------|------|
@@ -11,6 +12,10 @@ RAG-powered customer support chatbot using Google Gemini and ChromaDB.
 | Backend | Render | FREE |
 | Frontend | Vercel | FREE |
 | Database | Supabase | FREE |
+
+## 🔗 Live Demo
+- **Backend API**: https://rag-a-muffin.onrender.com
+- **Frontend**: https://rag-a-muffin.vercel.app (Pending your Vercel deployment)
 
 ## ✨ Features
 
