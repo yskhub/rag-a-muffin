@@ -82,6 +82,17 @@ export default function Header({ backendStatus = 'checking' }) {
                 </div>
                 <div className="w-px h-8 bg-white/[0.08]" />
 
+                {/* Architecture Diagram */}
+                <a
+                    href="/architecture.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-medium text-slate-400 hover:text-primary transition-colors px-2 py-1 rounded hover:bg-primary/5"
+                    title="View Architecture Diagram"
+                >
+                    🏗️ Architecture_Diagram
+                </a>
+
                 {/* Export */}
                 <button
                     onClick={handleExport}

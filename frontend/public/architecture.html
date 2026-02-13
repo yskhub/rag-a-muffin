@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG-a-Muffin — Architecture Diagram</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #020617;
+            --card: #0f172a;
+            --border: rgba(255, 255, 255, 0.06);
+            --primary: #00f0ff;
+            --emerald: #34d399;
+            --amber: #fbbf24;
+            --violet: #a78bfa;
+            --red: #f87171;
+            --white: #ffffff;
+            --slate-200: #e2e8f0;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--white);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Scanline effect */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 240, 255, 0.008) 2px,
+                    rgba(0, 240, 255, 0.008) 4px);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 40px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .header-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--slate-500);
+            letter-spacing: 1px;
+        }
+
+        .back-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            background: rgba(0, 240, 255, 0.05);
+            border-color: rgba(0, 240, 255, 0.4);
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 50px 40px 80px;
+        }
+
+        .title-section {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .title-section h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .title-section p {
+            color: var(--slate-400);
+            font-size: 15px;
+        }
+
+        /* ─── Architecture Canvas ─── */
+        .arch-canvas {
+            position: relative;
+            width: 100%;
+            min-height: 700px;
+        }
+
+        /* SVG Connections */
+        .connections {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .conn-line {
+            stroke: rgba(0, 240, 255, 0.15);
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 8 4;
+            animation: dash 20s linear infinite;
+        }
+
+        .conn-line.active {
+            stroke: rgba(0, 240, 255, 0.4);
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 4px rgba(0, 240, 255, 0.3));
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -240;
+            }
+        }
+
+        /* ─── Layer Sections ─── */
+        .layer {
+            position: relative;
+            z-index: 2;
+            margin-bottom: 30px;
+        }
+
+        .layer-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            padding-left: 4px;
+        }
+
+        .layer-label .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .layer-label span {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .layer-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        /* ─── Cards ─── */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--card-accent, var(--primary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .card .tech {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .card .desc {
+            font-size: 13px;
+            color: var(--slate-400);
+            line-height: 1.6;
+        }
+
+        .card .tag {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        /* Color variants */
+        .card.primary {
+            --card-accent: var(--primary);
+        }
+
+        .card.emerald {
+            --card-accent: var(--emerald);
+        }
+
+        .card.amber {
+            --card-accent: var(--amber);
+        }
+
+        .card.violet {
+            --card-accent: var(--violet);
+        }
+
+        .card.primary .card-icon {
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+        }
+
+        .card.emerald .card-icon {
+            background: rgba(52, 211, 153, 0.08);
+            border: 1px solid rgba(52, 211, 153, 0.15);
+        }
+
+        .card.amber .card-icon {
+            background: rgba(251, 191, 36, 0.08);
+            border: 1px solid rgba(251, 191, 36, 0.15);
+        }
+
+        .card.violet .card-icon {
+            background: rgba(167, 139, 250, 0.08);
+            border: 1px solid rgba(167, 139, 250, 0.15);
+        }
+
+        .card.primary .tech {
+            color: var(--primary);
+        }
+
+        .card.emerald .tech {
+            color: var(--emerald);
+        }
+
+        .card.amber .tech {
+            color: var(--amber);
+        }
+
+        .card.violet .tech {
+            color: var(--violet);
+        }
+
+        .card.primary .tag {
+            background: rgba(0, 240, 255, 0.06);
+            color: var(--primary);
+            border: 1px solid rgba(0, 240, 255, 0.12);
+        }
+
+        .card.emerald .tag {
+            background: rgba(52, 211, 153, 0.06);
+            color: var(--emerald);
+            border: 1px solid rgba(52, 211, 153, 0.12);
+        }
+
+        .card.amber .tag {
+            background: rgba(251, 191, 36, 0.06);
+            color: var(--amber);
+            border: 1px solid rgba(251, 191, 36, 0.12);
+        }
+
+        .card.violet .tag {
+            background: rgba(167, 139, 250, 0.06);
+            color: var(--violet);
+            border: 1px solid rgba(167, 139, 250, 0.12);
+        }
+
+        /* ─── Flow Arrows ─── */
+        .flow-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 0;
+            gap: 8px;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--slate-500);
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .flow-arrow .arrow-line {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            position: relative;
+        }
+
+        .flow-arrow .arrow-line::after {
+            content: '▼';
+            position: absolute;
+            bottom: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--primary);
+            font-size: 10px;
+        }
+
+        .flow-down {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            gap: 4px;
+        }
+
+        .flow-down .v-line {
+            width: 2px;
+            height: 30px;
+            background: linear-gradient(180deg, var(--primary), rgba(0, 240, 255, 0.1));
+        }
+
+        .flow-down .v-arrow {
+            color: var(--primary);
+            font-size: 12px;
+        }
+
+        .flow-down .flow-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--slate-500);
+            letter-spacing: 1px;
+        }
+
+        /* ─── Data Flow Diagram ─── */
+        .dataflow {
+            margin-top: 60px;
+            padding: 40px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+        }
+
+        .dataflow h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .pipeline {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .pipe-step {
+            flex: 1;
+            min-width: 170px;
+            text-align: center;
+            padding: 20px 16px;
+            position: relative;
+        }
+
+        .pipe-step::after {
+            content: '→';
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--slate-600);
+            font-size: 20px;
+            z-index: 3;
+        }
+
+        .pipe-step:last-child::after {
+            display: none;
+        }
+
+        .pipe-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .pipe-step .pipe-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .pipe-step h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .pipe-step p {
+            font-size: 12px;
+            color: var(--slate-500);
+            line-height: 1.5;
+        }
+
+        /* ─── Cost Banner ─── */
+        .cost-banner {
+            margin-top: 50px;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.05), rgba(0, 240, 255, 0.05));
+            border: 1px solid rgba(52, 211, 153, 0.15);
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .cost-banner .cost-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--emerald);
+            margin-bottom: 8px;
+        }
+
+        .cost-banner .cost-label {
+            font-size: 14px;
+            color: var(--slate-400);
+        }
+
+        .cost-items {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .cost-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--slate-400);
+        }
+
+        .cost-item .check {
+            color: var(--emerald);
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px 60px;
+            }
+
+            .header {
+                padding: 14px 20px;
+            }
+
+            .layer-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .pipeline {
+                flex-direction: column;
+            }
+
+            .pipe-step::after {
+                display: none;
+            }
+        }
+
+        /* Entrance animations */
+        .card,
+        .pipe-step,
+        .cost-banner {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .card:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .pipe-step:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .pipe-step:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .pipe-step:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .pipe-step:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .pipe-step:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+
+        .pipe-step:nth-child(6) {
+            animation-delay: 0.6s;
+        }
+
+        .cost-banner {
+            animation-delay: 0.5s;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-6px);
+            }
+        }
+
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-left">
+            <div class="header-icon">◆</div>
+            <div>
+                <h1>Architecture Diagram</h1>
+                <div class="header-sub">RAG-a-Muffin · AI Context Engine</div>
+            </div>
+        </div>
+        <a href="/" class="back-link">← Back to App</a>
+    </div>
+
+    <div class="container">
+
+        <div class="title-section">
+            <h2>System Architecture</h2>
+            <p>End-to-end RAG pipeline built on 100% free-tier services</p>
+        </div>
+
+        <!-- ═══ LAYER 1: Client ═══ -->
+        <div class="layer">
+            <div class="layer-label">
+                <div class="dot" style="background: var(--primary)"></div>
+                <span style="color: var(--primary)">Presentation Layer</span>
+            </div>
+            <div class="layer-cards">
+                <div class="card primary">
+                    <div class="card-icon">⚛️</div>
+                    <h3>React Frontend</h3>
+                    <div class="tech">React 18 + Vite</div>
+                    <div class="desc">Component-based SPA with responsive 3-column layout, glassmorphism UI, and dark
+                        enterprise theme.</div>
+                    <span class="tag">Vercel · Free</span>
+                </div>
+                <div class="card primary">
+                    <div class="card-icon">🗄️</div>
+                    <h3>Zustand Store</h3>
+                    <div class="tech">State Management</div>
+                    <div class="desc">Lightweight state with localStorage persistence. Manages chat, sessions, feedback,
+                        and export.</div>
+                    <span class="tag">Client-Side</span>
+                </div>
+                <div class="card primary">
+                    <div class="card-icon">🎨</div>
+                    <h3>Tailwind CSS v4</h3>
+                    <div class="tech">@tailwindcss/vite</div>
+                    <div class="desc">Utility-first CSS with custom design tokens, animations, and responsive
+                        breakpoints.</div>
+                    <span class="tag">Build-Time</span>
+                </div>
+                <div class="card primary">
+                    <div class="card-icon">📝</div>
+                    <h3>React-Markdown</h3>
+                    <div class="tech">remark-gfm</div>
+                    <div class="desc">Renders AI responses as rich markdown — bold, lists, code, tables, and links.
+                    </div>
+                    <span class="tag">Client-Side</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flow Arrow Down -->
+        <div class="flow-down">
+            <div class="v-line"></div>
+            <div class="v-arrow">▼</div>
+            <div class="flow-label">HTTPS · REST API · JSON</div>
+            <div class="v-line"></div>
+        </div>
+
+        <!-- ═══ LAYER 2: API ═══ -->
+        <div class="layer">
+            <div class="layer-label">
+                <div class="dot" style="background: var(--emerald)"></div>
+                <span style="color: var(--emerald)">API Layer</span>
+            </div>
+            <div class="layer-cards">
+                <div class="card emerald">
+                    <div class="card-icon">⚡</div>
+                    <h3>FastAPI Server</h3>
+                    <div class="tech">Python 3.11 · Async</div>
+                    <div class="desc">High-performance async API with automatic OpenAPI docs, CORS middleware, and GZip
+                        compression.</div>
+                    <span class="tag">Render · Free</span>
+                </div>
+                <div class="card emerald">
+                    <div class="card-icon">💬</div>
+                    <h3>Chat Endpoint</h3>
+                    <div class="tech">POST /api/chat</div>
+                    <div class="desc">Receives user query, triggers RAG pipeline, returns AI response with source
+                        citations.</div>
+                    <span class="tag">Core Route</span>
+                </div>
+                <div class="card emerald">
+                    <div class="card-icon">📄</div>
+                    <h3>Documents API</h3>
+                    <div class="tech">/api/documents/*</div>
+                    <div class="desc">Upload PDFs/text, get stats, list sources, delete documents from vector store.
+                    </div>
+                    <span class="tag">CRUD</span>
+                </div>
+                <div class="card emerald">
+                    <div class="card-icon">🔧</div>
+                    <h3>Admin API</h3>
+                    <div class="tech">/api/admin/*</div>
+                    <div class="desc">Dashboard stats, seed sample data, bulk FAQ upload for knowledge base management.
+                    </div>
+                    <span class="tag">Management</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flow Arrow Down -->
+        <div class="flow-down">
+            <div class="v-line"></div>
+            <div class="v-arrow">▼</div>
+            <div class="flow-label">RAG Pipeline Orchestration</div>
+            <div class="v-line"></div>
+        </div>
+
+        <!-- ═══ LAYER 3: AI Services ═══ -->
+        <div class="layer">
+            <div class="layer-label">
+                <div class="dot" style="background: var(--amber)"></div>
+                <span style="color: var(--amber)">Intelligence Layer</span>
+            </div>
+            <div class="layer-cards">
+                <div class="card amber">
+                    <div class="card-icon floating">🧠</div>
+                    <h3>Google Gemini</h3>
+                    <div class="tech">gemini-2.0-flash</div>
+                    <div class="desc">Latest Google LLM with 1M token context window. Self-limited to 10 RPM with
+                        exponential backoff.</div>
+                    <span class="tag">Free · 15 RPM</span>
+                </div>
+                <div class="card amber">
+                    <div class="card-icon floating">🔗</div>
+                    <h3>RAG Pipeline</h3>
+                    <div class="tech">Orchestrator</div>
+                    <div class="desc">Coordinates query → search → context building → memory injection → generation →
+                        citation.</div>
+                    <span class="tag">Core Engine</span>
+                </div>
+                <div class="card amber">
+                    <div class="card-icon floating">📋</div>
+                    <h3>Prompt Engineering</h3>
+                    <div class="tech">Context Injection</div>
+                    <div class="desc">Structured prompts with retrieved documents, conversation history, and grounding
+                        instructions.</div>
+                    <span class="tag">Anti-Hallucination</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flow Arrow Down -->
+        <div class="flow-down">
+            <div class="v-line"></div>
+            <div class="v-arrow">▼</div>
+            <div class="flow-label">Vector Embeddings · Session State</div>
+            <div class="v-line"></div>
+        </div>
+
+        <!-- ═══ LAYER 4: Data ═══ -->
+        <div class="layer">
+            <div class="layer-label">
+                <div class="dot" style="background: var(--violet)"></div>
+                <span style="color: var(--violet)">Data Layer</span>
+            </div>
+            <div class="layer-cards">
+                <div class="card violet">
+                    <div class="card-icon">🗃️</div>
+                    <h3>ChromaDB</h3>
+                    <div class="tech">Vector Database</div>
+                    <div class="desc">Open-source embedding database. Stores document chunks as vectors for semantic
+                        similarity search (top-5).</div>
+                    <span class="tag">In-Memory · Free</span>
+                </div>
+                <div class="card violet">
+                    <div class="card-icon">🧩</div>
+                    <h3>Document Processor</h3>
+                    <div class="tech">Text Chunking</div>
+                    <div class="desc">Splits uploaded documents into semantic chunks, generates embeddings, and indexes
+                        in ChromaDB.</div>
+                    <span class="tag">Ingestion</span>
+                </div>
+                <div class="card violet">
+                    <div class="card-icon">💾</div>
+                    <h3>Memory Service</h3>
+                    <div class="tech">Session Store</div>
+                    <div class="desc">In-memory conversation history per session. Maintains last 5 messages for context
+                        continuity.</div>
+                    <span class="tag">In-Memory · Free</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ Data Flow Pipeline ═══ -->
+        <div class="dataflow">
+            <h3>RAG Query Pipeline — Data Flow</h3>
+            <div class="pipeline">
+                <div class="pipe-step">
+                    <div class="pipe-num"
+                        style="background: rgba(0,240,255,0.1); color: var(--primary); border: 1px solid rgba(0,240,255,0.2);">
+                        1</div>
+                    <div class="pipe-icon">💬</div>
+                    <h4>User Query</h4>
+                    <p>User types a question in the chat interface</p>
+                </div>
+                <div class="pipe-step">
+                    <div class="pipe-num"
+                        style="background: rgba(52,211,153,0.1); color: var(--emerald); border: 1px solid rgba(52,211,153,0.2);">
+                        2</div>
+                    <div class="pipe-icon">🔍</div>
+                    <h4>Vector Search</h4>
+                    <p>ChromaDB finds top-5 matching document chunks</p>
+                </div>
+                <div class="pipe-step">
+                    <div class="pipe-num"
+                        style="background: rgba(251,191,36,0.1); color: var(--amber); border: 1px solid rgba(251,191,36,0.2);">
+                        3</div>
+                    <div class="pipe-icon">📋</div>
+                    <h4>Context Build</h4>
+                    <p>Relevant fragments assembled with source metadata</p>
+                </div>
+                <div class="pipe-step">
+                    <div class="pipe-num"
+                        style="background: rgba(167,139,250,0.1); color: var(--violet); border: 1px solid rgba(167,139,250,0.2);">
+                        4</div>
+                    <div class="pipe-icon">🧠</div>
+                    <h4>Memory Inject</h4>
+                    <p>Last 5 conversation messages added for continuity</p>
+                </div>
+                <div class="pipe-step">
+                    <div class="pipe-num"
+                        style="background: rgba(0,240,255,0.1); color: var(--primary); border: 1px solid rgba(0,240,255,0.2);">
+                        5</div>
+                    <div class="pipe-icon">⚡</div>
+                    <h4>LLM Generate</h4>
+                    <p>Gemini produces grounded response from context</p>
+                </div>
+                <div class="pipe-step">
+                    <div class="pipe-num"
+                        style="background: rgba(52,211,153,0.1); color: var(--emerald); border: 1px solid rgba(52,211,153,0.2);">
+                        6</div>
+                    <div class="pipe-icon">📎</div>
+                    <h4>Cite Sources</h4>
+                    <p>Response + source badges returned to user</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ Cost Banner ═══ -->
+        <div class="cost-banner">
+            <div class="cost-value">$0.00</div>
+            <div class="cost-label">Total Monthly Infrastructure Cost</div>
+            <div class="cost-items">
+                <div class="cost-item"><span class="check">✓</span> Vercel (Frontend)</div>
+                <div class="cost-item"><span class="check">✓</span> Render (Backend)</div>
+                <div class="cost-item"><span class="check">✓</span> Gemini API (LLM)</div>
+                <div class="cost-item"><span class="check">✓</span> ChromaDB (Vectors)</div>
+                <div class="cost-item"><span class="check">✓</span> No Credit Card</div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
