@@ -46,6 +46,17 @@ class ChromaDBService:
         self.embedder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
         print("✅ ChromaDB initialized (100% FREE - Local storage)")
     
+    def _ensure_collection(self):
+        """Ensure collection exists — auto-recover from stale references."""
+        try:
+            self.collection.count()
+        except Exception:
+            print("⚠️ Collection stale — recreating...")
+            self.collection = self.client.get_or_create_collection(
+                name="ecommerce_docs",
+                metadata={"description": "E-commerce product documents and FAQs"}
+            )
+    
     def add_documents(
         self, 
         texts: List[str], 
@@ -59,6 +70,7 @@ class ChromaDBService:
         if not texts:
             return
         
+        self._ensure_collection()
         # Generate embeddings locally (no API costs!)
         embeddings = self.embedder.encode(texts).tolist()
         
@@ -77,6 +89,7 @@ class ChromaDBService:
         Semantic search in ChromaDB
         Returns top-k most similar documents
         """
+        self._ensure_collection()
         # Check if collection is empty
         if self.collection.count() == 0:
             return {
@@ -98,17 +111,28 @@ class ChromaDBService:
         return results
     
     def delete_all(self) -> None:
-        """Clear all documents (useful for testing)"""
-        self.client.delete_collection("ecommerce_docs")
-        self.collection = self.client.get_or_create_collection(
-            name="ecommerce_docs",
-            metadata={"description": "E-commerce product documents and FAQs"}
-        )
-        print("✅ Database cleared")
+        """Clear all documents without destroying the collection."""
+        try:
+            self._ensure_collection()
+            all_ids = self.collection.get()["ids"]
+            if all_ids:
+                self.collection.delete(ids=all_ids)
+            print(f"✅ Database cleared ({len(all_ids)} docs removed)")
+        except Exception as e:
+            print(f"⚠️ Clear failed, recreating collection: {e}")
+            try:
+                self.client.delete_collection("ecommerce_docs")
+            except Exception:
+                pass
+            self.collection = self.client.get_or_create_collection(
+                name="ecommerce_docs",
+                metadata={"description": "E-commerce product documents and FAQs"}
+            )
+            print("✅ Collection recreated")
     
     def delete_by_source(self, source: str) -> int:
         """Delete all documents from a specific source"""
-        # Get all documents with this source
+        self._ensure_collection()
         results = self.collection.get(
             where={"source": source}
         )
@@ -120,6 +144,7 @@ class ChromaDBService:
     
     def get_stats(self) -> Dict:
         """Get database statistics"""
+        self._ensure_collection()
         count = self.collection.count()
         return {
             "total_documents": count,
@@ -132,6 +157,7 @@ class ChromaDBService:
     
     def get_all_sources(self) -> List[str]:
         """Get list of all unique document sources"""
+        self._ensure_collection()
         results = self.collection.get(include=["metadatas"])
         sources = set()
         for metadata in results["metadatas"]:
