@@ -1,12 +1,11 @@
 """
 Google Gemini Service - 100% FREE
-Limits: 15 requests/min, 1500 requests/day
+Uses gemini-1.5-flash for highest free-tier rate limit (15 RPM)
 No credit card required!
 """
 
 import google.generativeai as genai
 import os
-import time
 import asyncio
 from datetime import datetime, timedelta
 from collections import deque
@@ -16,10 +15,12 @@ class GeminiService:
     """
     FREE Google Gemini API Service
     
-    Rate Limits (FREE tier):
+    Uses gemini-1.5-flash for best free-tier limits:
     - 15 requests per minute (RPM)
     - 1500 requests per day (RPD)
     - 1 million tokens per minute
+    
+    Self-limits to 6 RPM with 8-second gaps for safety.
     """
     
     def __init__(self):
@@ -27,28 +28,32 @@ class GeminiService:
         if not api_key or api_key == "PLACEHOLDER":
             print("⚠️ GOOGLE_API_KEY not found or is PLACEHOLDER. Gemini will NOT work.")
             self.model = None
-            self.request_times: deque = deque(maxlen=10)
+            self.model_name = "NOT_CONFIGURED"
+            self.request_times: deque = deque(maxlen=6)
             return
         
         genai.configure(api_key=api_key)
         
-        # Try gemini-2.0-flash first, fall back to 1.5-flash
+        # Use gemini-1.5-flash — it has the HIGHEST free-tier RPM (15 RPM)
+        # gemini-2.0-flash only gets 10 RPM on free tier
         try:
-            self.model = genai.GenerativeModel('gemini-2.0-flash')
-            print("✅ Google Gemini 2.0 Flash initialized (FREE)")
-        except Exception as e:
-            print(f"⚠️ gemini-2.0-flash unavailable ({e}), falling back to gemini-1.5-flash")
             self.model = genai.GenerativeModel('gemini-1.5-flash')
+            self.model_name = 'gemini-1.5-flash'
             print("✅ Google Gemini 1.5 Flash initialized (FREE - 15 RPM)")
+        except Exception as e:
+            print(f"❌ Failed to initialize Gemini: {e}")
+            self.model = None
+            self.model_name = "FAILED"
         
-        # Track requests — keep under 10 RPM to be safe (limit is 15)
-        self.request_times: deque = deque(maxlen=10)
+        # Self-limit to 6 RPM (well under Google's 15 RPM limit)
+        self.request_times: deque = deque(maxlen=6)
+        self._last_request_time = None
     
     async def _check_rate_limit(self):
         """
-        Ensure we stay well under 15 RPM.
-        We self-limit to ~10 RPM to leave headroom.
-        Also enforces a minimum 4-second gap between requests.
+        Aggressive rate limiting to prevent 429 errors:
+        - Max 6 requests per minute (Google allows 15)
+        - Minimum 8-second gap between any two requests
         """
         now = datetime.now()
         
@@ -56,35 +61,34 @@ class GeminiService:
         while self.request_times and (now - self.request_times[0]) > timedelta(seconds=60):
             self.request_times.popleft()
         
-        # If we've made 10+ requests in the last minute, wait for the oldest to expire
-        if len(self.request_times) >= 10:
+        # If we've made 6+ requests in the last minute, wait
+        if len(self.request_times) >= 6:
             oldest = self.request_times[0]
-            wait_seconds = 60 - (now - oldest).total_seconds() + 2  # +2s safety buffer
+            wait_seconds = 62 - (now - oldest).total_seconds()  # 62s for safety
             if wait_seconds > 0:
-                print(f"⏳ Self rate-limiting. Waiting {wait_seconds:.1f}s...")
+                print(f"⏳ Self rate-limiting ({len(self.request_times)} reqs in last min). Waiting {wait_seconds:.0f}s...")
                 await asyncio.sleep(wait_seconds)
         
-        # Enforce minimum 4-second gap between requests
-        if self.request_times:
-            last_request = self.request_times[-1]
-            elapsed = (now - last_request).total_seconds()
-            if elapsed < 4:
-                gap = 4 - elapsed
-                print(f"⏳ Minimum gap. Waiting {gap:.1f}s...")
+        # Enforce minimum 8-second gap between any two requests
+        if self._last_request_time:
+            elapsed = (now - self._last_request_time).total_seconds()
+            if elapsed < 8:
+                gap = 8 - elapsed
+                print(f"⏳ Min gap enforced. Waiting {gap:.1f}s...")
                 await asyncio.sleep(gap)
         
         # Record this request
+        self._last_request_time = datetime.now()
         self.request_times.append(datetime.now())
     
     async def generate_response(self, prompt: str) -> str:
         """
         Generate response using Gemini with robust rate-limit handling.
-        Retries with exponential backoff + long waits for 429 errors.
         """
         if self.model is None:
             return "AI engine is not configured. Please set the GOOGLE_API_KEY environment variable on the server."
         
-        max_retries = 4
+        max_retries = 3
         
         for attempt in range(max_retries):
             # Enforce rate limit before each attempt
@@ -98,7 +102,7 @@ class GeminiService:
             
             except Exception as e:
                 error_msg = str(e)
-                print(f"❌ Gemini API Error (Attempt {attempt+1}/{max_retries}): {error_msg}")
+                print(f"❌ Gemini Error (Attempt {attempt+1}/{max_retries}): {error_msg}")
                 
                 is_rate_limit = any(kw in error_msg.lower() for kw in [
                     "rate", "429", "resource", "exhausted", "quota", "too many"
@@ -106,27 +110,26 @@ class GeminiService:
                 
                 if is_rate_limit:
                     if attempt < max_retries - 1:
-                        # Exponential backoff: 15s, 30s, 60s
-                        wait_time = 15 * (2 ** attempt)
-                        print(f"⏳ Rate limited by Google (429). Waiting {wait_time}s before retry {attempt+2}...")
+                        # Long waits: 30s, then 65s (full rate limit window reset)
+                        wait_time = 30 if attempt == 0 else 65
+                        print(f"⏳ Rate limited (429). Waiting {wait_time}s for window reset...")
                         await asyncio.sleep(wait_time)
+                        # Clear our request tracker since we waited a full window
+                        self.request_times.clear()
                         continue
-                    # All retries exhausted
                     return (
-                        "The AI engine is temporarily rate-limited by Google's free tier (15 requests/minute). "
-                        "Please wait about 60 seconds and try again. This is a limitation of the free Gemini API."
+                        "The AI is temporarily rate-limited by Google's free tier. "
+                        "Please wait about 60 seconds and try again."
                     )
                 
-                # Non-rate-limit errors — shorter retry
+                # Non-rate-limit errors
                 if attempt < max_retries - 1:
-                    wait_time = 5 * (attempt + 1)
-                    print(f"⏳ Retrying in {wait_time}s...")
-                    await asyncio.sleep(wait_time)
+                    await asyncio.sleep(5)
                     continue
                 
                 return f"AI engine error: {error_msg[:150]}. Please try again."
         
-        return "System timeout after multiple retries. Please try again in a minute."
+        return "System timeout. Please wait a minute and try again."
     
     async def generate_with_context(
         self, 
@@ -136,7 +139,6 @@ class GeminiService:
     ) -> str:
         """
         Generate contextual response (RAG-style)
-        Uses retrieved context + conversation history
         """
         history_text = ""
         if conversation_history:
@@ -171,9 +173,9 @@ ANSWER:"""
     def get_stats(self) -> Dict:
         """Get service statistics"""
         return {
-            "model": "gemini-2.0-flash" if self.model else "NOT_CONFIGURED",
+            "model": self.model_name,
             "requests_last_minute": len(self.request_times),
-            "rate_limit": "10 RPM self-limited (Google max: 15 RPM)",
+            "rate_limit": "6 RPM self-limited (Google max: 15 RPM)",
             "cost": "$0.00",
             "status": "ready" if self.model else "no_api_key"
         }
