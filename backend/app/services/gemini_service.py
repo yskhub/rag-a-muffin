@@ -7,6 +7,7 @@ No credit card required!
 import google.generativeai as genai
 import os
 import time
+import asyncio
 from datetime import datetime, timedelta
 from collections import deque
 from typing import List, Dict, Optional
@@ -22,67 +23,71 @@ class GeminiService:
     """
     
     def __init__(self):
-        # Get API key from environment
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key or api_key == "PLACEHOLDER":
             print("⚠️ GOOGLE_API_KEY not found or is PLACEHOLDER. Gemini will NOT work.")
             self.model = None
-            self.request_times: deque = deque(maxlen=15)
+            self.request_times: deque = deque(maxlen=10)
             return
         
-        # Configure Gemini
         genai.configure(api_key=api_key)
         
-        # Try gemini-2.0-flash first (latest), fall back to 1.5-flash
+        # Try gemini-2.0-flash first, fall back to 1.5-flash
         try:
             self.model = genai.GenerativeModel('gemini-2.0-flash')
-            # Quick test to see if model is accessible
             print("✅ Google Gemini 2.0 Flash initialized (FREE)")
         except Exception as e:
             print(f"⚠️ gemini-2.0-flash unavailable ({e}), falling back to gemini-1.5-flash")
             self.model = genai.GenerativeModel('gemini-1.5-flash')
             print("✅ Google Gemini 1.5 Flash initialized (FREE - 15 RPM)")
         
-        # Rate limiter: track last 15 requests
-        self.request_times: deque = deque(maxlen=15)
+        # Track requests — keep under 10 RPM to be safe (limit is 15)
+        self.request_times: deque = deque(maxlen=10)
     
     async def _check_rate_limit(self):
         """
-        Ensure we don't exceed 15 requests per minute
-        Waits if necessary to avoid rate limit errors
+        Ensure we stay well under 15 RPM.
+        We self-limit to ~10 RPM to leave headroom.
+        Also enforces a minimum 4-second gap between requests.
         """
         now = datetime.now()
         
-        # Remove requests older than 1 minute
-        while self.request_times and (now - self.request_times[0]) > timedelta(minutes=1):
+        # Remove requests older than 60 seconds
+        while self.request_times and (now - self.request_times[0]) > timedelta(seconds=60):
             self.request_times.popleft()
         
-        # If at limit, wait
-        if len(self.request_times) >= 15:
-            oldest_request = self.request_times[0]
-            wait_seconds = 60 - (now - oldest_request).total_seconds()
+        # If we've made 10+ requests in the last minute, wait for the oldest to expire
+        if len(self.request_times) >= 10:
+            oldest = self.request_times[0]
+            wait_seconds = 60 - (now - oldest).total_seconds() + 2  # +2s safety buffer
             if wait_seconds > 0:
-                print(f"⏳ Local rate limit reached. Awaiting {wait_seconds:.1f}s...")
-                import asyncio
+                print(f"⏳ Self rate-limiting. Waiting {wait_seconds:.1f}s...")
                 await asyncio.sleep(wait_seconds)
+        
+        # Enforce minimum 4-second gap between requests
+        if self.request_times:
+            last_request = self.request_times[-1]
+            elapsed = (now - last_request).total_seconds()
+            if elapsed < 4:
+                gap = 4 - elapsed
+                print(f"⏳ Minimum gap. Waiting {gap:.1f}s...")
+                await asyncio.sleep(gap)
         
         # Record this request
         self.request_times.append(datetime.now())
     
     async def generate_response(self, prompt: str) -> str:
         """
-        Generate response using Gemini
-        Includes automatic rate limiting and retries for free tier
+        Generate response using Gemini with robust rate-limit handling.
+        Retries with exponential backoff + long waits for 429 errors.
         """
         if self.model is None:
             return "AI engine is not configured. Please set the GOOGLE_API_KEY environment variable on the server."
         
-        import asyncio
-        max_retries = 3
-        retry_delay = 5  # Start with 5 seconds
+        max_retries = 4
         
         for attempt in range(max_retries):
-            # Check rate limit before making request
+            # Enforce rate limit before each attempt
             await self._check_rate_limit()
             
             try:
@@ -95,20 +100,31 @@ class GeminiService:
                 error_msg = str(e)
                 print(f"❌ Gemini API Error (Attempt {attempt+1}/{max_retries}): {error_msg}")
                 
-                # Rate limit or resource exhausted
-                if any(kw in error_msg.lower() for kw in ["rate", "429", "resource", "exhausted", "quota"]):
+                is_rate_limit = any(kw in error_msg.lower() for kw in [
+                    "rate", "429", "resource", "exhausted", "quota", "too many"
+                ])
+                
+                if is_rate_limit:
                     if attempt < max_retries - 1:
-                        wait_time = retry_delay * (attempt + 1)
-                        print(f"⏳ Rate limited by Google. Waiting {wait_time}s before retry...")
+                        # Exponential backoff: 15s, 30s, 60s
+                        wait_time = 15 * (2 ** attempt)
+                        print(f"⏳ Rate limited by Google (429). Waiting {wait_time}s before retry {attempt+2}...")
                         await asyncio.sleep(wait_time)
                         continue
-                    return "The AI engine is temporarily rate-limited by Google. Please wait 60 seconds and try again."
+                    # All retries exhausted
+                    return (
+                        "The AI engine is temporarily rate-limited by Google's free tier (15 requests/minute). "
+                        "Please wait about 60 seconds and try again. This is a limitation of the free Gemini API."
+                    )
                 
-                # Other errors - retry with backoff
+                # Non-rate-limit errors — shorter retry
                 if attempt < max_retries - 1:
-                    await asyncio.sleep(retry_delay)
+                    wait_time = 5 * (attempt + 1)
+                    print(f"⏳ Retrying in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
                     continue
-                return f"AI engine error: {error_msg[:100]}. Please try again."
+                
+                return f"AI engine error: {error_msg[:150]}. Please try again."
         
         return "System timeout after multiple retries. Please try again in a minute."
     
@@ -122,15 +138,13 @@ class GeminiService:
         Generate contextual response (RAG-style)
         Uses retrieved context + conversation history
         """
-        # Format conversation history
         history_text = ""
         if conversation_history:
             history_text = "\n".join([
                 f"{msg['role'].capitalize()}: {msg['content']}" 
-                for msg in conversation_history[-5:]  # Last 5 messages
+                for msg in conversation_history[-5:]
             ])
         
-        # Build structured prompt
         prompt = f"""You are a helpful e-commerce customer support assistant.
 Use the following product information to answer the customer's question accurately.
 
@@ -146,6 +160,7 @@ INSTRUCTIONS:
 - Answer based ONLY on the provided product information
 - If the answer isn't in the context, politely say "I don't have that specific information in our catalog"
 - Be concise, friendly, and helpful
+- Use markdown formatting (bold, lists, etc.) when it improves readability
 - Don't make up information
 - If suggesting products, mention their source
 
@@ -158,7 +173,7 @@ ANSWER:"""
         return {
             "model": "gemini-2.0-flash" if self.model else "NOT_CONFIGURED",
             "requests_last_minute": len(self.request_times),
-            "rate_limit": "15 RPM (FREE)",
+            "rate_limit": "10 RPM self-limited (Google max: 15 RPM)",
             "cost": "$0.00",
             "status": "ready" if self.model else "no_api_key"
         }
