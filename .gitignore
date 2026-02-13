@@ -37,3 +37,5 @@ Thumbs.db
 # Build
 build/
 *.egg-info/
+DEMO_SPEECH.md
+create_presentation.py
